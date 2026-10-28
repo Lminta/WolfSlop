@@ -106,6 +106,9 @@ deterministic and approximate; `BrowserUiHost` supplies actual Canvas font metri
 `LoadFontAsync(family, source)` loads an application font and invalidates cached
 metrics. `InvalidateTextMetrics()` is available when fonts are loaded externally.
 Wrapping preserves grapheme boundaries and respects `MaxLines`.
+Text controls cache measured layouts. Custom text measurers should advance
+`IUiTextMeasurer.Version` when their font metrics change; browser font loading
+and `InvalidateTextMetrics()` do this automatically.
 
 Images are keyed by asset URI. `PrepareImagesAsync` preloads them and fills in
 intrinsic dimensions. Images added later load lazily; call preparation again when
@@ -115,13 +118,14 @@ can supply independently positioned and animated parts.
 
 `UiDrawingBuilder` provides polylines, polygons, rectangles and circles with fills,
 strokes, and affine transforms. Set `UiCanvas.ViewBox` to the vector coordinate
-space. Assign a new immutable `UiDrawing` when the content changes. For example:
+space. Assign a new immutable `UiDrawing` when the content changes. For scrolling
+or rotating views, retain the drawing and update `DrawingTransform` instead of
+rebuilding its points. Stroke widths remain independent of this transform:
 
 ```csharp
-map.Drawing = new UiDrawingBuilder
-{
-    Transform = Matrix3x2.CreateRotation(heading)
-}.Polyline(route, "#edf4f8", 3).Build();
+map.Drawing = new UiDrawingBuilder().Polyline(route, "#edf4f8", 3).Build();
+// On view changes:
+map.DrawingTransform = Matrix3x2.CreateRotation(heading);
 ```
 
 The backend caches vector surfaces by control, drawing revision and raster size.

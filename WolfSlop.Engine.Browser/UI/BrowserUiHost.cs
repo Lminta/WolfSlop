@@ -14,7 +14,8 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
     private IJSInProcessObjectReference? _surface;
     private DotNetObjectReference<BrowserUiHost>? _callback;
     private readonly Dictionary<(string, UiFont), float> _measurements = [];
-    private readonly Dictionary<string, long> _drawingVersions = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, UiRenderNode> _sentNodes = new(StringComparer.Ordinal);
+    public long Version { get; private set; }
     private UiFrame? _lastFrame;
     private Vector2 _viewport;
     private bool _disposed;
@@ -44,7 +45,7 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         Document?.Input.Cancel();
-        Document = document; _lastFrame = null; _drawingVersions.Clear();
+        Document = document; _lastFrame = null; _sentNodes.Clear();
         _surface!.InvokeVoid("reset");
     }
 
@@ -75,16 +76,23 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(frame);
         if (ReferenceEquals(_lastFrame, frame)) return;
-        var nodes = frame.Nodes.Select(node =>
+        var nodes = new List<UiRenderNode>();
+        foreach (var node in frame.Nodes)
         {
-            if (node.Drawing == null) return node;
-            var previous = _drawingVersions.GetValueOrDefault(node.Id);
-            _drawingVersions[node.Id] = node.Drawing.Revision;
-            return previous == node.Drawing.Revision ? node with { Drawing = null } : node;
-        }).ToArray();
+            var next = node;
+            _sentNodes.TryGetValue(node.Id, out var previous);
+            // Clip lists are immutable snapshots; normalize equal snapshots so
+            // record equality detects otherwise unchanged display-list entries.
+            if (previous != null && node.Clips.SequenceEqual(previous.Clips)) next = node with { Clips = previous.Clips };
+            if (next == previous) continue;
+            _sentNodes[node.Id] = next;
+            nodes.Add(next.Drawing != null && next.Drawing.Revision == previous?.Drawing?.Revision
+                ? next with { Drawing = null } : next);
+        }
         var ids = frame.Nodes.Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
-        foreach (var id in _drawingVersions.Keys.Where(id => !ids.Contains(id)).ToArray()) _drawingVersions.Remove(id);
-        _surface!.InvokeVoid("render", frame with { Nodes = nodes });
+        foreach (var id in _sentNodes.Keys.Where(id => !ids.Contains(id)).ToArray()) _sentNodes.Remove(id);
+        _surface!.InvokeVoid("renderDelta", new { frame.Version, frame.Width, frame.Height,
+            Order = frame.Nodes.Select(node => node.Id).ToArray(), Nodes = nodes, frame.FocusedId, frame.ModalId });
         _lastFrame = frame;
     }
 
@@ -99,7 +107,7 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
 
     public void InvalidateTextMetrics()
     {
-        _measurements.Clear(); Document?.Invalidate();
+        _measurements.Clear(); Version++; Document?.Invalidate();
     }
     public async Task LoadFontAsync(string family, string source, CancellationToken cancellationToken = default)
     {
@@ -142,7 +150,7 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
         if (_module is IJSInProcessObjectReference module) module.Dispose();
         else if (_module != null) _ = _module.DisposeAsync();
         _module = null; _callback?.Dispose(); _callback = null;
-        _measurements.Clear(); _drawingVersions.Clear(); _lastFrame = null;
+        _measurements.Clear(); _sentNodes.Clear(); _lastFrame = null;
     }
 
     public sealed record ImageInfo(string Source, float Width, float Height);

@@ -198,8 +198,8 @@ public sealed class UiDocument : IDisposable
         var font = (node as UiText)?.Font ?? Theme.Font;
         var text = node is UiToggle toggle ? (toggle.Checked ? "✓ " : "□ ") + toggle.Text : (node as UiText)?.Text;
         if (node is UiTextInput input) text = input.Text.Length == 0 ? input.Placeholder : input.Password ? new string('•', input.Text.Length) : input.Text;
-        var layout = text == null ? null : UiTextLayout.Measure(text, font, node is UiText { Wrap: true }
-            ? MathF.Max(0, node.Bounds.Width - style.Padding.Size.X) : float.MaxValue, (node as UiText)!.MaxLines, metrics);
+        var layout = text == null ? null : ((UiText)node).Layout(text, font, node is UiText { Wrap: true }
+            ? MathF.Max(0, node.Bounds.Width - style.Padding.Size.X) : float.MaxValue, metrics);
         output.Add(new()
         {
             Id = node.Id, ParentId = node.Parent?.Id, Kind = node.Kind,
@@ -211,6 +211,7 @@ public sealed class UiDocument : IDisposable
             Content = text, Font = text == null ? null : font, TextLayout = layout, TextAlignment = (node as UiText)?.TextAlignment ?? UiAlignment.Start,
             Source = (node as UiImage)?.Source, SourceRect = (node as UiImage)?.SourceRect ?? new(0, 0, 1, 1), ImageFit = (node as UiImage)?.Fit ?? UiImageFit.Stretch,
             Drawing = (node as UiCanvas)?.Drawing, ViewBox = (node as UiCanvas)?.ViewBox ?? default,
+            DrawingTransform = node is UiCanvas canvas ? UiMatrix.From(canvas.DrawingTransform) : UiMatrix.Identity,
             ClassName = node.ClassName, Role = node.Role ?? (node.Label != null && node is UiImage or UiCanvas ? "img" : null),
             Label = node.Label, Focusable = node.Focusable, TabIndex = node.TabIndex,
             Interactive = node.Interactive && enabled && opacity > 0,

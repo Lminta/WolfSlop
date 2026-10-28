@@ -5,6 +5,7 @@ namespace WolfNET.Engine.UI;
 
 public interface IUiTextMeasurer
 {
+    long Version => 0;
     float MeasureWidth(string text, UiFont font);
 }
 

@@ -9,6 +9,9 @@ public class UiText(string? id = null) : UiElement(id)
     private bool _wrap;
     private int _maxLines = int.MaxValue;
     private UiAlignment _textAlignment;
+    private sealed record LayoutCache(string Text, UiFont Font, float Width, int Lines,
+        IUiTextMeasurer Metrics, long Version, UiTextLayout Layout);
+    private LayoutCache? _layout, _alternateLayout;
     public string Text
     {
         get => _text;
@@ -21,7 +24,23 @@ public class UiText(string? id = null) : UiElement(id)
     public UiAlignment TextAlignment { get => _textAlignment; set => Set(ref _textAlignment, value); }
     internal override string Kind => "text";
     internal override Vector2 Measure(Vector2 available, IUiTextMeasurer metrics, UiTheme theme) =>
-        UiTextLayout.Measure(Text, Font ?? theme.Font, Wrap ? available.X : float.MaxValue, MaxLines, metrics).Size;
+        Layout(Text, Font ?? theme.Font, Wrap ? available.X : float.MaxValue, metrics).Size;
+
+    internal UiTextLayout Layout(string text, UiFont font, float width, IUiTextMeasurer metrics)
+    {
+        bool Matches(LayoutCache? entry) => entry != null && entry.Text == text && entry.Font == font &&
+            entry.Width == width && entry.Lines == MaxLines && ReferenceEquals(entry.Metrics, metrics) && entry.Version == metrics.Version;
+        if (Matches(_layout)) return _layout!.Layout;
+        if (Matches(_alternateLayout))
+        {
+            (_layout, _alternateLayout) = (_alternateLayout, _layout);
+            return _layout!.Layout;
+        }
+        var result = UiTextLayout.Measure(text, font, width, MaxLines, metrics);
+        _alternateLayout = _layout;
+        _layout = new(text, font, width, MaxLines, metrics, metrics.Version, result);
+        return result;
+    }
 }
 
 /// <summary>A single-line editor. The browser backend uses native editing, selection and IME.</summary>
@@ -121,8 +140,11 @@ public sealed class UiCanvas(string? id = null) : UiElement(id)
 {
     private UiDrawing _drawing = new([]);
     private UiRect _viewBox = new(0, 0, 100, 100);
+    private Matrix3x2 _drawingTransform = Matrix3x2.Identity;
     public UiDrawing Drawing { get => _drawing; set => Set(ref _drawing, value ?? throw new ArgumentNullException(nameof(value))); }
     public UiRect ViewBox { get => _viewBox; set => Set(ref _viewBox, value); }
+    // View changes reuse the immutable drawing and its browser-side geometry.
+    public Matrix3x2 DrawingTransform { get => _drawingTransform; set => Set(ref _drawingTransform, value); }
     internal override string Kind => "canvas";
 }
 

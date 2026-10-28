@@ -34,6 +34,7 @@ public sealed record UiRenderNode
     public UiRect SourceRect { get; init; } = new(0, 0, 1, 1);
     public UiImageFit ImageFit { get; init; }
     public UiDrawing? Drawing { get; init; }
+    public UiMatrix DrawingTransform { get; init; } = UiMatrix.Identity;
     public UiRect ViewBox { get; init; }
     public string? ClassName { get; init; }
     public string? Role { get; init; }

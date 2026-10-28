@@ -113,6 +113,32 @@ internal static class UiChecks
         var aspect = document.Root.Add(new UiImage("aspect") { Source = "image.png", Style = new() { Width = 200, AspectRatio = 2 } });
         document.BuildFrame(new(800, 600));
         Check(aspect.Bounds.Height == 100, "Image aspect layout did not infer height.");
+        var canvas = document.Root.Add(new UiCanvas("course")
+        {
+            Drawing = new UiDrawingBuilder().Polyline([Vector2.Zero, Vector2.One], "#fff", 2).Build()
+        });
+        var original = document.BuildFrame(new(800, 600));
+        canvas.DrawingTransform = Matrix3x2.CreateRotation(.3f) * Matrix3x2.CreateTranslation(5, 8);
+        var moved = document.BuildFrame(new(800, 600));
+        var before = original.Nodes.Single(node => node.Id == canvas.Id);
+        var after = moved.Nodes.Single(node => node.Id == canvas.Id);
+        Check(moved.Version > original.Version && ReferenceEquals(before.Drawing, after.Drawing) &&
+            after.DrawingTransform.Matrix == canvas.DrawingTransform,
+            "Moving a drawing must publish its transform without rebuilding immutable geometry.");
+        using var cached = new UiDocument { ScaleMode = UiScaleMode.Pixels };
+        cached.Root.Add(new UiText("cached-text") { Text = "speed" });
+        var metrics = new CountingMetrics();
+        var firstLayout = cached.BuildFrame(new(800, 600), metrics).Nodes.Single(node => node.Id == "cached-text").TextLayout!;
+        var measurements = metrics.Count;
+        cached.Invalidate();
+        var reusedLayout = cached.BuildFrame(new(800, 600), metrics).Nodes.Single(node => node.Id == "cached-text").TextLayout!;
+        Check(ReferenceEquals(firstLayout, reusedLayout) && metrics.Count == measurements,
+            "Unchanged HUD text must reuse layout across display-list updates.");
+        metrics.Version++; metrics.Scale = 2;
+        cached.Invalidate();
+        var refreshed = cached.BuildFrame(new(800, 600), metrics).Nodes.Single(node => node.Id == "cached-text").TextLayout!;
+        Check(refreshed.Width == firstLayout.Width * 2 && metrics.Count > measurements,
+            "Loading a font must invalidate cached layout and text measurements.");
         using var scaled = new UiDocument { ReferenceSize = new(800, 600) };
         var scaledFrame = scaled.BuildFrame(new(400, 300));
         Check(scaledFrame.Width == 800 && scaledFrame.Height == 600, "Reference scaling changed logical layout size.");
@@ -130,5 +156,12 @@ internal static class UiChecks
         Reject<ObjectDisposedException>(() => disposable.BuildFrame(new(100)));
         Console.WriteLine($"PASS: {count} UI assertions (layout, text, transforms, clipping, input, focus, modal, controls, scrolling, and lifetime).");
         return count;
+    }
+    private sealed class CountingMetrics : IUiTextMeasurer
+    {
+        public long Version { get; set; }
+        public int Count;
+        public float Scale = 1;
+        public float MeasureWidth(string text, UiFont font) { Count++; return text.Length * font.Size * Scale; }
     }
 }

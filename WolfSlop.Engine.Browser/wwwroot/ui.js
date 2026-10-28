@@ -1,4 +1,13 @@
 const identity = {a: 1, b: 0, c: 0, d: 1, e: 0, f: 0};
+const sameMatrix = (a, b) => a.a === b.a && a.b === b.b && a.c === b.c && a.d === b.d && a.e === b.e && a.f === b.f;
+const multiply = (a, b) => ({a: a.a*b.a+a.c*b.b, b: a.b*b.a+a.d*b.b,
+    c: a.a*b.c+a.c*b.d, d: a.b*b.c+a.d*b.d, e: a.a*b.e+a.c*b.f+a.e, f: a.b*b.e+a.d*b.f+a.f});
+export function mergeUiFrame(previous, update) {
+    const nodes = new Map((previous?.nodes ?? []).map(node => [node.id, node]));
+    for (const node of update.nodes) nodes.set(node.id,
+        node.kind === 'canvas' && !node.drawing ? {...node, drawing: nodes.get(node.id)?.drawing ?? null} : node);
+    return {...update, nodes: update.order.map(id => nodes.get(id))};
+}
 export function inversePoint(matrix, x, y) {
     const determinant = matrix.a * matrix.d - matrix.b * matrix.c;
     if (Math.abs(determinant) < 1e-12) return null;
@@ -59,10 +68,10 @@ function rectangle(context, x, y, width, height, radius = 0) {
     else context.rect(x, y, width, height);
 }
 
-export function drawShapes(context, drawing) {
+export function drawShapes(context, drawing, transform = identity) {
     for (const shape of drawing.shapes) {
         context.save();
-        const matrix = shape.transform ?? identity;
+        const matrix = multiply(transform, shape.transform ?? identity);
         apply(context, matrix);
         const p = shape.points;
         context.beginPath();
@@ -163,12 +172,15 @@ export function createUi(world, callback) {
         if (!node.drawing || node.viewBox.width <= 0 || node.viewBox.height <= 0) return null;
         const width = Math.max(1, Math.ceil(node.width * canvas.width / frame.width)), height = Math.max(1, Math.ceil(node.height * canvas.height / frame.height));
         let cache = vectors.get(node.id);
-        if (cache?.revision === node.drawing.revision && cache.width === width && cache.height === height) return cache.canvas;
+        const transform = node.drawingTransform ?? identity, box = node.viewBox;
+        if (cache?.revision === node.drawing.revision && cache.width === width && cache.height === height &&
+            sameMatrix(cache.transform, transform) && cache.box.x === box.x && cache.box.y === box.y &&
+            cache.box.width === box.width && cache.box.height === box.height) return cache.canvas;
         const surface = cache?.canvas ?? document.createElement('canvas'); surface.width = width; surface.height = height;
         const ctx = surface.getContext('2d');
         ctx.scale(width / node.viewBox.width, height / node.viewBox.height); ctx.translate(-node.viewBox.x, -node.viewBox.y);
-        drawShapes(ctx, node.drawing);
-        cache = {canvas: surface, revision: node.drawing.revision, drawing: node.drawing, width, height}; vectors.set(node.id, cache); return surface;
+        drawShapes(ctx, node.drawing, transform);
+        cache = {canvas: surface, revision: node.drawing.revision, drawing: node.drawing, width, height, transform, box}; vectors.set(node.id, cache); return surface;
     }
     function paint() {
         if (disposed || !frame) return;
@@ -312,6 +324,9 @@ export function createUi(world, callback) {
             document.fonts.add(face); fonts.add(face);
         },
         async prepare(sources) {return Promise.all(sources.map(async source => {const entry = await getImage(source).promise; return {source, width: entry.ready ? entry.image.naturalWidth : 0, height: entry.ready ? entry.image.naturalHeight : 0};}));},
+        renderDelta(value) {
+            this.render(mergeUiFrame(frame, value));
+        },
         render(value) {
             if (disposed) return;
             for (const node of value.nodes) if (node.kind === 'canvas' && !node.drawing) node.drawing = vectors.get(node.id)?.drawing ?? null;

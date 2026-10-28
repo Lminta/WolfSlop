@@ -23,6 +23,10 @@ Use a secure browser context (`https` or `localhost`) and a WebGPU-capable devic
 for world rendering. `BrowserUiHost` requires in-process WebAssembly interop;
 the `/ui` gallery does not require WebGPU.
 
+The UI host sends changed display-list entries and preserves browser-side vector
+geometry between frames. View transforms and text updates reuse immutable drawings
+and cached text layouts; document changes and resize still refresh the full view.
+
 The host creates the canvas, initializes the provider and owns its lifetime.
 Dispose input subscriptions, frame loops, UI hosts, renderers and audio owners
 when leaving a screen. Engine receives only maps, frames, input state, elapsed
