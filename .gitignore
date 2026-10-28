@@ -1,0 +1,11 @@
+[Bb]in/
+[Oo]bj/
+artifacts/
+publish/
+TestResults/
+.idea/
+.vs/
+*.user
+*.DotSettings.user
+*.log
+*.binlog
