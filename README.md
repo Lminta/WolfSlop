@@ -1,3 +1,5 @@
+<p align="center"><strong>This project is entirely AI-generated.</strong></p>
+
 <h1 align="center">WolfSlop</h1>
 
 <p align="center">
