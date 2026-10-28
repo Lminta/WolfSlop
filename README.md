@@ -1,5 +1,7 @@
 # WolfSlop
 
+<img src="docs/images/wolf.png" alt="A snow-covered gray wolf" width="320">
+
 Portable .NET 10 game engine and Blazor WebAssembly browser bindings, maintained
 as an independent Git repository. No game project or game assets are required to
 build or test this repository.
