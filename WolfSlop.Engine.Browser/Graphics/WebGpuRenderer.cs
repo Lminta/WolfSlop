@@ -95,16 +95,17 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         }
 
         // 1. Synchronize map only if revision changed.
-        UpdateMap(map);
+        using var queue = _device.Queue;
+        UpdateMap(map, queue);
 
         // 2. Update camera every frame.
-        UpdateCamera(position, direction, plane, pitch, elevation);
+        UpdateCamera(position, direction, plane, pitch, elevation, queue);
         UpdateOverlays(frame.Overlays);
         var selectionStart = _profiling ? Stopwatch.GetTimestamp() : 0;
         _browserSprites!.Select(_spriteSelection, map.Sprites, position, direction, plane, _settings.RenderDistance,
             frame.CullSpritesOutsideView, _sceneAnimationClock.Elapsed.TotalSeconds, frame.DynamicSprites);
         var uploadStart = _profiling ? Stopwatch.GetTimestamp() : 0;
-        UpdateSprites();
+        UpdateSprites(queue);
         var submissionStart = _profiling ? Stopwatch.GetTimestamp() : 0;
 
         // 3. Create GPU command encoder.
@@ -173,11 +174,11 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
             // Fullscreen triangle.
             pass.Draw(3);
 
-            if (_spriteSelection.Visible.Count > 0)
+            if (_spriteSelection.Visible.Length > 0)
             {
                 pass.SetPipeline(_spritePipeline);
                 pass.SetBindGroup(0, _spriteBindGroup!);
-                pass.Draw(6, (uint)_spriteSelection.Visible.Count);
+                pass.Draw(6, (uint)_spriteSelection.Visible.Length);
             }
 
             DrawOverlays(pass, frame.Overlays);
@@ -195,7 +196,6 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         // 7. Submit compute and render passes.
         using var commands = encoder.Finish();
 
-        using var queue = _device.Queue;
         queue.Submit([commands]);
         if (_profiling) ReportProfile(selectionStart, uploadStart, submissionStart);
 
@@ -215,7 +215,7 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         _uploadMilliseconds += Stopwatch.GetElapsedTime(uploadStart, submissionStart).TotalMilliseconds;
         _submissionMilliseconds += Stopwatch.GetElapsedTime(submissionStart).TotalMilliseconds;
         _profileCandidates += _spriteSelection.CandidatesExamined;
-        _profileSprites += _spriteSelection.Visible.Count;
+        _profileSprites += _spriteSelection.Visible.Length;
         _profileFrames++;
         if (Stopwatch.GetElapsedTime(_profileSampleStart).TotalSeconds < 1) return;
         Console.WriteLine("[PROFILE] " + System.Text.Json.JsonSerializer.Serialize(new

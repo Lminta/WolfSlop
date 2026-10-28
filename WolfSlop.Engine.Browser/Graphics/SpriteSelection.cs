@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Runtime.InteropServices;
 using WolfNET.Engine.World;
 
 using WolfNET.Engine.Graphics;
@@ -8,9 +9,12 @@ namespace WolfNET.Engine.Browser.Graphics;
 /// <summary>Resolves the browser's ordered sprite IDs without repeating atlas-frame selection.</summary>
 internal sealed class SpriteSelection
 {
-    internal readonly record struct VisibleSprite(Sprite Sprite, Vector2 Scale, uint Layer, uint Kind, float Distance, int Order);
+    // Matches the 32-byte storage record used by both sprite shaders.
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    internal readonly record struct VisibleSprite(Vector2 Position, uint Layer, uint OwnerCell,
+        Vector2 Scale, float Elevation, uint Kind);
     private readonly List<VisibleSprite> _visible = [];
-    public IReadOnlyList<VisibleSprite> Visible => _visible;
+    public ReadOnlySpan<VisibleSprite> Visible => CollectionsMarshal.AsSpan(_visible);
     public int CandidatesExamined { get; private set; }
 
     public void Clear()
@@ -29,8 +33,8 @@ internal sealed class SpriteSelection
             var index = (int)keys[2 + i * 2];
             var sprite = index < sprites.Count ? sprites[index] : dynamicSprites[index - sprites.Count];
             var frame = frames[index];
-            _visible.Add(new(sprite, new(widths[index], sprite.Scale.Y), sprite.TextureLayer + (uint)frame,
-                sprite.ViewKind(frame), BitConverter.UInt32BitsToSingle(keys[3 + i * 2]), index));
+            _visible.Add(new(sprite.Position, sprite.TextureLayer + (uint)frame, sprite.OwnerCell,
+                new(widths[index], sprite.Scale.Y), sprite.Elevation, sprite.ViewKind(frame)));
         }
     }
 }

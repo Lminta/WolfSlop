@@ -8,5 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="../../WolfSlop.Engine/WolfNET.Engine.csproj" />
     <Compile Include="../Shared/ReferenceSpriteSelection.cs" Link="ReferenceSpriteSelection.cs" />
+    <Compile Include="../../WolfSlop.Engine.Browser/Graphics/SpriteSelection.cs" Link="SpriteSelection.cs" />
   </ItemGroup>
 </Project>

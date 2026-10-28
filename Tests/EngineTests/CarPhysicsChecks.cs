@@ -395,6 +395,15 @@ internal static class CarPhysicsChecks
               MathF.Abs(rotation.Direction.Y) > .5f,
             "Rotation swept the car through a wall in a tight corridor.");
         var cornerCollider = new OrientedBoxCollider(new TestNavigation((x, y) => x != 10 || y != 10), .9f, .6f);
+        var footprintMatchesContact = true;
+        for (var i = 0; i < 128; i++)
+        {
+            var angle = i * MathF.Tau / 31;
+            var footprintHeading = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * (1 + i % 3);
+            var center = new Vector2(9.5f + i % 9 * .25f, 9.5f + i / 9 % 9 * .25f);
+            footprintMatchesContact &= cornerCollider.OverlapsCell(center, footprintHeading, 10, 10) == !cornerCollider.CanOccupy(center, footprintHeading);
+        }
+        Check(footprintMatchesContact, "Surface footprint queries diverged from collision contact at edges, corners or rotated headings.");
         var diagonalHeading = Vector2.Normalize(Vector2.One);
         Check(cornerCollider.CanOccupy(new(9.5f, 9.5f), diagonalHeading) &&
               !cornerCollider.CanOccupy(new(9.7f, 9.7f), diagonalHeading),

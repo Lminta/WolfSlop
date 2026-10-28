@@ -15,8 +15,21 @@ public sealed class OrientedBoxCollider(INavigationMap map, float length, float 
     private readonly float _halfLength = length * .5f;
     private readonly float _halfWidth = width * .5f;
 
-    public bool OverlapsCell(Vector2 position, Vector2 direction, int x, int y) =>
-        Contact(position, Vector2.Normalize(direction), x, y, out _, out _);
+    public bool OverlapsCell(Vector2 position, Vector2 direction, int x, int y)
+    {
+        direction = Vector2.Normalize(direction);
+        var right = new Vector2(-direction.Y, direction.X);
+        var separation = position - new Vector2(x + .5f, y + .5f);
+        var extent = Extent(direction);
+        if (extent.X + .5f - MathF.Abs(separation.X) <= 0 ||
+            extent.Y + .5f - MathF.Abs(separation.Y) <= 0) return false;
+        // The same four SAT axes as Contact, without calculating a correction
+        // normal and penetration depth for surface and footprint queries.
+        var axisLengthSquared = Vector2.Dot(direction, direction);
+        var cellRadius = .5f * (MathF.Abs(direction.X) + MathF.Abs(direction.Y));
+        return _halfLength * axisLengthSquared + cellRadius - MathF.Abs(Vector2.Dot(separation, direction)) > 0 &&
+               _halfWidth * axisLengthSquared + cellRadius - MathF.Abs(Vector2.Dot(separation, right)) > 0;
+    }
 
     public bool CanOccupy(Vector2 position, Vector2 direction)
     {

@@ -176,8 +176,10 @@ export function createUi(world, callback) {
         if (cache?.revision === node.drawing.revision && cache.width === width && cache.height === height &&
             sameMatrix(cache.transform, transform) && cache.box.x === box.x && cache.box.y === box.y &&
             cache.box.width === box.width && cache.box.height === box.height) return cache.canvas;
-        const surface = cache?.canvas ?? document.createElement('canvas'); surface.width = width; surface.height = height;
+        const surface = cache?.canvas ?? document.createElement('canvas');
+        if (surface.width !== width || surface.height !== height) {surface.width = width; surface.height = height;}
         const ctx = surface.getContext('2d');
+        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, width, height);
         ctx.scale(width / node.viewBox.width, height / node.viewBox.height); ctx.translate(-node.viewBox.x, -node.viewBox.y);
         drawShapes(ctx, node.drawing, transform);
         cache = {canvas: surface, revision: node.drawing.revision, drawing: node.drawing, width, height, transform, box}; vectors.set(node.id, cache); return surface;

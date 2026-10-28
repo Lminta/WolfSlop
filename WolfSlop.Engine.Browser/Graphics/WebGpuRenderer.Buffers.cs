@@ -117,7 +117,7 @@ public sealed partial class WebGpuRenderer
     }
 
     /// <summary>Uploads compiled row-major cells only when their snapshot changes.</summary>
-    private void UpdateMap(RenderMap map)
+    private void UpdateMap(RenderMap map, GPUQueue queue)
     {
         if (ReferenceEquals(_uploadedMap, map)) return;
         if (!ReferenceEquals(_preparedTextures, map.Textures))
@@ -133,7 +133,6 @@ public sealed partial class WebGpuRenderer
             cells[i * 4 + 2] = cell.CeilingTextureLayer;
             cells[i * 4 + 3] = (uint)cell.Flags;
         }
-        using var queue = _device!.Queue;
         using (var data = new Uint32Array(cells))
             queue.WriteBuffer(_worldMapBuffer!, 0, data);
         using (var info = new Uint32Array(new uint[] { (uint)map.Width, (uint)map.Height, (uint)map.Sprites.Count, 0 }))
@@ -150,7 +149,7 @@ public sealed partial class WebGpuRenderer
         Vector2 direction,
         Vector2 plane,
         float pitch,
-        float elevation)
+        float elevation, GPUQueue queue)
     {
         if (_device == null || _cameraBuffer == null)
         {
@@ -179,7 +178,6 @@ public sealed partial class WebGpuRenderer
 
         Buffer.BlockCopy(_cameraData, 0, _cameraBytes, 0, CameraBufferSize);
         _cameraUpload!.WriteBytes(_cameraBytes);
-        using var queue = _device.Queue;
         queue.WriteBuffer(
             _cameraBuffer,
             0,

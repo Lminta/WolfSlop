@@ -17,11 +17,30 @@ public sealed class MouseTracker : IMouseInput, IDisposable
     private bool _awaitingPromise;
     private bool _releasePending;
     private int _requestId;
+    private bool? _frameCapture;
 
-    public bool IsLocked => !_disposed && !_releasePending && HasPointerLock();
+    public bool IsLocked => !_disposed && !_releasePending && (_frameCapture ?? HasPointerLock());
     public string? CaptureError { get; private set; }
     public event Action? PointerLockReleased;
     public event Action? CaptureStateChanged;
+
+    /// <summary>Samples capture once for a synchronous game frame. Outside this scope,
+    /// reads still query the DOM so an Escape release is observed before its event arrives.</summary>
+    public CaptureSample SampleForFrame()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var previous = _frameCapture;
+        _frameCapture = HasPointerLock();
+        return new(this, previous);
+    }
+
+    public readonly ref struct CaptureSample
+    {
+        private readonly MouseTracker _owner;
+        private readonly bool? _previous;
+        internal CaptureSample(MouseTracker owner, bool? previous) => (_owner, _previous) = (owner, previous);
+        public void Dispose() => _owner._frameCapture = _previous;
+    }
 
     private bool HasPointerLock()
     {
@@ -95,6 +114,7 @@ public sealed class MouseTracker : IMouseInput, IDisposable
     private void SynchronizeCapture()
     {
         var locked = HasPointerLock();
+        if (_frameCapture != null) _frameCapture = locked;
         var wasLocked = _wasLocked;
         _wasLocked = locked;
         if (locked || wasLocked) _requestPending = false;
@@ -122,6 +142,7 @@ public sealed class MouseTracker : IMouseInput, IDisposable
         _requestPending = false;
         _releasePending = false;
         _wasLocked = false;
+        if (_frameCapture != null) _frameCapture = false;
         _movement = Vector2.Zero;
         PointerLockReleased?.Invoke();
         CaptureError = "Mouse capture was blocked. If you just pressed Esc, wait a moment, then click the game again.";
@@ -143,6 +164,7 @@ public sealed class MouseTracker : IMouseInput, IDisposable
         var wasLocked = _wasLocked || HasPointerLock();
         _releasePending = HasPointerLock();
         _wasLocked = false;
+        if (_frameCapture != null) _frameCapture = false;
         _movement = Vector2.Zero;
         if (wasLocked) PointerLockReleased?.Invoke();
         if (_releasePending)

@@ -67,7 +67,7 @@ public sealed partial class WebGpuRenderer
             });
             _preparedTextures = map.Textures;
             _uploadedMap = null;
-            UpdateMap(map);
+            UpdateMap(map, queue);
             _sceneAnimationClock.Restart();
             Console.WriteLine($"[GPU] Scene prepared: {map.Width}x{map.Height}, {map.Sprites.Count} sprites");
         }
@@ -104,10 +104,10 @@ public sealed partial class WebGpuRenderer
         _browserSprites?.ReleaseScene();
     }
 
-    private void UpdateSprites()
+    private void UpdateSprites(GPUQueue queue)
     {
         var sprites = _spriteSelection.Visible;
-        var spriteCount = sprites.Count;
+        var spriteCount = sprites.Length;
 
         if (Math.Max(1, spriteCount) > _spriteCapacity)
         {
@@ -159,7 +159,6 @@ public sealed partial class WebGpuRenderer
         }
 
         // The third u32 of MapInfo counts active sprites, excluding spare buffer capacity.
-        using var queue = _device!.Queue;
         if (_uploadedSpriteCount != spriteCount)
         {
             BitConverter.TryWriteBytes(_spriteCountBytes, (uint)spriteCount);
@@ -171,24 +170,8 @@ public sealed partial class WebGpuRenderer
         if (spriteCount == 0)
             return;
 
-        // Matches the 32-byte Sprite in both WGSL shaders, including the final geometry-kind word.
-        var upload = MemoryMarshal.Cast<byte, uint>(_spriteBytes.AsSpan());
-        for (int i = 0; i < spriteCount; i++)
-        {
-            var view = sprites[i];
-            var sprite = view.Sprite;
-            upload[i * 8] = BitConverter.SingleToUInt32Bits(sprite.Position.X);
-            upload[i * 8 + 1] = BitConverter.SingleToUInt32Bits(sprite.Position.Y);
-            upload[i * 8 + 2] = view.Layer;
-            upload[i * 8 + 3] = sprite.OwnerCell;
-            var scale = view.Scale;
-            upload[i * 8 + 4] = BitConverter.SingleToUInt32Bits(scale.X);
-            upload[i * 8 + 5] = BitConverter.SingleToUInt32Bits(scale.Y);
-            upload[i * 8 + 6] = BitConverter.SingleToUInt32Bits(sprite.Elevation);
-            upload[i * 8 + 7] = view.Kind;
-        }
-
-        _spriteUpload!.WriteBytes(_spriteBytes);
+        MemoryMarshal.AsBytes(sprites).CopyTo(_spriteBytes);
+        _spriteUpload!.Write(_spriteBytes, 0, 0, spriteCount * SpriteSize);
         // writeBuffer offsets/sizes are in elements for a Uint32Array, not bytes.
         queue.WriteBuffer(_spriteBuffer!, 0UL, _spriteUpload, 0, (ulong)spriteCount * 8);
     }

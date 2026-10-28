@@ -19,6 +19,7 @@ internal sealed class BrowserSpriteSelection(JSObject module) : IDisposable
     private byte[] _dynamicBytes = [];
     private byte[] _outputBytes = [], _widthBytes = [];
     private readonly List<int> _atlasIndices = [];
+    private bool _widthsUploaded;
     private int[] _frames = [];
     private float[] _widths = [];
 
@@ -74,6 +75,7 @@ internal sealed class BrowserSpriteSelection(JSObject module) : IDisposable
             _dynamicUpload = new Float32Array(_dynamicBytes.Length / 4);
         }
         var overrides = MemoryMarshal.Cast<byte, uint>(_widthBytes.AsSpan());
+        var widthsChanged = !_widthsUploaded;
         for (var i = 0; i < _atlasIndices.Count; i++)
         {
             var index = _atlasIndices[i];
@@ -81,8 +83,10 @@ internal sealed class BrowserSpriteSelection(JSObject module) : IDisposable
             var frame = sprite.ViewFrame(position, elapsedSeconds);
             _frames[index] = frame;
             _widths[index] = sprite.ViewWidth(frame);
+            var widthBits = BitConverter.SingleToUInt32Bits(_widths[index]);
+            widthsChanged |= overrides[i * 2 + 1] != widthBits;
             overrides[i * 2] = (uint)index;
-            overrides[i * 2 + 1] = BitConverter.SingleToUInt32Bits(_widths[index]);
+            overrides[i * 2 + 1] = widthBits;
         }
         var dynamicData = MemoryMarshal.Cast<byte, float>(_dynamicBytes.AsSpan());
         for (var i = 0; i < dynamicSprites.Count; i++)
@@ -97,11 +101,12 @@ internal sealed class BrowserSpriteSelection(JSObject module) : IDisposable
             dynamicData[i * 4 + 2] = _widths[index];
             dynamicData[i * 4 + 3] = avatar.MaximumViewWidth;
         }
-        _widthOverrides!.WriteBytes(_widthBytes);
-        _dynamicUpload!.WriteBytes(_dynamicBytes);
-        var count = module.JSRef!.CallApply<int>("select", new object[] { _output!, _widthOverrides, _atlasIndices.Count,
+        if (widthsChanged) _widthOverrides!.WriteBytes(_widthBytes);
+        _widthsUploaded = true;
+        if (dynamicSprites.Count > 0) _dynamicUpload!.WriteBytes(_dynamicBytes);
+        var count = module.JSRef!.CallApply<int>("select", new object[] { _output!, _widthOverrides!, _atlasIndices.Count,
             position.X, position.Y, range, direction.X, direction.Y, plane.Length(), cullView,
-            _dynamicUpload, dynamicSprites.Count });
+            _dynamicUpload!, dynamicSprites.Count });
         _output!.Read(0, _outputBytes, 0, (count + 1) * 8);
         selection.Resolve(sprites, MemoryMarshal.Cast<byte, uint>(_outputBytes.AsSpan()), count, _frames, _widths, dynamicSprites);
     }
@@ -113,6 +118,7 @@ internal sealed class BrowserSpriteSelection(JSObject module) : IDisposable
         _dynamicUpload?.Dispose(); _dynamicUpload = null; _dynamicBytes = [];
         _positions = null; _widthOverrides = _output = null;
         _source = null;
+        _widthsUploaded = false;
         _frames = []; _widths = []; _outputBytes = _widthBytes = [];
         _atlasIndices.Clear();
     }
