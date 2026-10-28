@@ -1,4 +1,4 @@
-# WolfNET Engine
+# WolfSlop
 
 Portable .NET 10 game engine and Blazor WebAssembly browser bindings, maintained
 as an independent Git repository. No game project or game assets are required to
@@ -17,7 +17,7 @@ build or test this repository.
 Run from this repository's root with the .NET 10 SDK and Node 22 or newer:
 
 ```powershell
-dotnet build WolfNET.Engine.slnx
+dotnet build WolfSlop.slnx
 dotnet run --project Tests/EngineTests/WolfNET.EngineTests.csproj
 dotnet run --project Tests/EngineConsumer/WolfNET.EngineConsumer.csproj
 node --test Tests/sprite-sort.test.mjs Tests/texture-upload.test.mjs Tests/sfx-mixer.test.mjs Tests/ui.test.mjs
