@@ -18,7 +18,7 @@ That provider supplies `WebGpuRenderer`, `BrowserUiHost`, `BrowserInput`, browse
 audio and `BrowserFrameLoop`, under `WolfNET.Engine.Browser.*` namespaces.
 The Blazor WebAssembly host registers
 `AddBlazorJSRuntime()` and starts with `BlazorJSRunAsync()`, as shown in
-[`WolfNET.Examples/Program.cs`](https://github.com/Lminta/WolfNET/blob/dev/WolfNET.Examples/Program.cs).
+[`WolfNET.Examples/Program.cs`](https://github.com/Lminta/WolfSlop.Examples/blob/dev/WolfSlop.Examples/Program.cs).
 
 Provider JavaScript and shaders are Razor static web assets, served automatically
 under `_content/WolfNET.Engine.Browser/`. Do not copy them into the application. Artwork,
@@ -53,7 +53,7 @@ loop.Start(milliseconds =>
 // Keep these owners alive until the host component is disposed.
 ```
 
-[`Viewer.razor`](https://github.com/Lminta/WolfNET/blob/dev/WolfNET.Examples/Pages/Viewer.razor) is a complete procedural
+[`Viewer.razor`](https://github.com/Lminta/WolfSlop.Examples/blob/dev/WolfSlop.Examples/Pages/Viewer.razor) is a complete procedural
 viewer using `Scene` and an `ISceneSystem`, with twelve moving sprites and no actor,
 controls, race state, or audio configuration. The exploration/racing example
 implements `IScene` separately, showing that applications can own scene assembly.

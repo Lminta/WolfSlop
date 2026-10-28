@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="WolfNET.MapTests" />
+    <InternalsVisibleTo Include="WolfSlop.MapTests" />
     <InternalsVisibleTo Include="WolfNET.EngineTests" />
     <None Include="README.md" Pack="true" PackagePath="/" />
     <None Update="UI/README.md" Pack="true" PackagePath="UI/README.md" />

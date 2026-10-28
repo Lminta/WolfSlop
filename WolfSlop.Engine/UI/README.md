@@ -44,8 +44,8 @@ ui.Render(viewport.X, viewport.Y);
 ```
 
 Keep these owners alive until the host component is disposed. A complete host is
-[`UiGallery.razor`](https://github.com/Lminta/WolfNET/blob/dev/WolfNET.Examples/Pages/UiGallery.razor). Game-specific UI
-composition is in [`ExampleHud.cs`](https://github.com/Lminta/WolfNET/blob/dev/WolfNET.Examples/Game/ExampleHud.cs).
+[`UiGallery.razor`](https://github.com/Lminta/WolfSlop.Examples/blob/dev/WolfSlop.Examples/Pages/UiGallery.razor). Game-specific UI
+composition is in [`ExampleHud.cs`](https://github.com/Lminta/WolfSlop.Examples/blob/dev/WolfSlop.Examples/Game/ExampleHud.cs).
 `BrowserUiHost` uses in-process WebAssembly interop; it is not a Blazor Server
 renderer. Its JavaScript is a provider asset at `_content/WolfNET.Engine.Browser/ui.js`.
 

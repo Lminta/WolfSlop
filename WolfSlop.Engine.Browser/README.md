@@ -6,8 +6,8 @@ dependencies: SpawnDev.BlazorJS, JavaScript interop, DOM, Canvas 2D, WebGPU and 
 
 Reference this project/package alongside Engine from a Blazor WebAssembly host.
 Register `AddBlazorJSRuntime()` and start with `BlazorJSRunAsync()`. See
-[`Program.cs`](https://github.com/Lminta/WolfNET/blob/dev/WolfNET.Examples/Program.cs) and
-[`Viewer.razor`](https://github.com/Lminta/WolfNET/blob/dev/WolfNET.Examples/Pages/Viewer.razor) for complete composition.
+[`Program.cs`](https://github.com/Lminta/WolfSlop.Examples/blob/dev/WolfSlop.Examples/Program.cs) and
+[`Viewer.razor`](https://github.com/Lminta/WolfSlop.Examples/blob/dev/WolfSlop.Examples/Pages/Viewer.razor) for complete composition.
 
 | Namespace | Provider implementation |
 | --- | --- |
