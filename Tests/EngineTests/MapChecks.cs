@@ -17,14 +17,14 @@ internal static class MapChecks
             catch (InvalidDataException) { assertions++; return; }
             throw new Exception(message);
         }
-        
+
         var definition = new MapDefinition
         {
             WorldMap = Enumerable.Range(0, 9).Select(x => Enumerable.Range(0, 9)
                 .Select(y => x == 0 || y == 0 || x == 8 || y == 8 ? 1 : 0).ToArray()).ToArray(),
             Spawn = new() { X = 4.5f, Y = 4.5f, DirectionX = 1, DirectionY = 0, MoveSpeed = 5, RotSpeed = 2 }
         };
-        
+
         new MusicDefinition().Validate();
         Reject(() => new MusicDefinition { Tracks = [" "] }.Validate(), "Music must reject empty track paths");
         Reject(() => new MusicDefinition { CrossfadeSeconds = float.NaN }.Validate(), "Music must reject invalid fade times");
@@ -81,7 +81,7 @@ internal static class MapChecks
             controller.Update(16);
             Check(!controller.Crouching && camera.Elevation == 0, "Crouch did not release");
         }
-        
+
         return assertions;
     }
 }
