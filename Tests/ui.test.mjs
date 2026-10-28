@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {inversePoint, hitTest, drawNode, drawShapes} from '../WolfNET.Engine.Browser/wwwroot/ui.js';
+import {inversePoint, hitTest, drawNode, drawShapes} from '../WolfSlop.Engine.Browser/wwwroot/ui.js';
 
 const identity = {a: 1, b: 0, c: 0, d: 1, e: 0, f: 0};
 const node = (id, extra = {}) => ({id, parentId: null, width: 100, height: 40, transform: identity,

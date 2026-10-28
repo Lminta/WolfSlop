@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {createUpload, uploadMips} from '../WolfNET.Engine.Browser/wwwroot/texture-upload.js';
+import {createUpload, uploadMips} from '../WolfSlop.Engine.Browser/wwwroot/texture-upload.js';
 
 test('texture uploads preserve crop, filtering, every mip and close their bitmaps', async () => {
     const original = globalThis.createImageBitmap, calls = [], copies = [], closed = [];

@@ -1,7 +1,7 @@
 // Run the C# suite first to generate its List.Sort reference ordering.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {sort, prepare, select as selectSprites, release, createSelector} from '../WolfNET.Engine.Browser/wwwroot/sprite-sort.js';
+import {sort, prepare, select as selectSprites, release, createSelector} from '../WolfSlop.Engine.Browser/wwwroot/sprite-sort.js';
 
 // Keep the existing player/rival scenarios while adapting them to the public list API.
 function select(output, widths, count, x, y, range, dx, dy, plane, cull, ...slots) {

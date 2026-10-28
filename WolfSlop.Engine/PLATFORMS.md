@@ -101,9 +101,9 @@ restriction. Engine's project has no `PackageReference` or `FrameworkReference`.
 
 ```powershell
 dotnet run --project Tests/EngineConsumer/WolfNET.EngineConsumer.csproj
-dotnet list WolfNET.Engine/WolfNET.Engine.csproj package --include-transitive
-dotnet pack WolfNET.Engine/WolfNET.Engine.csproj -o artifacts/packages
-dotnet pack WolfNET.Engine.Browser/WolfNET.Engine.Browser.csproj -o artifacts/packages
+dotnet list WolfSlop.Engine/WolfNET.Engine.csproj package --include-transitive
+dotnet pack WolfSlop.Engine/WolfNET.Engine.csproj -o artifacts/packages
+dotnet pack WolfSlop.Engine.Browser/WolfNET.Engine.Browser.csproj -o artifacts/packages
 ```
 
 Engine packages contain portable code and documentation. Browser packages contain

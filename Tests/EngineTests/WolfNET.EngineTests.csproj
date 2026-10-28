@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../WolfNET.Engine/WolfNET.Engine.csproj" />
+    <ProjectReference Include="../../WolfSlop.Engine/WolfNET.Engine.csproj" />
     <Compile Include="../Shared/ReferenceSpriteSelection.cs" Link="ReferenceSpriteSelection.cs" />
   </ItemGroup>
 </Project>

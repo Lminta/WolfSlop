@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {createMixer} from '../WolfNET.Engine.Browser/wwwroot/sfx-mixer.js';
+import {createMixer} from '../WolfSlop.Engine.Browser/wwwroot/sfx-mixer.js';
 
 test('voice batches share an audio timestamp and preserve gain, pan, pitch and smoothing', () => {
     let reads = 0;

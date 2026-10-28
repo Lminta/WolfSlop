@@ -8,7 +8,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../WolfNET.Engine/WolfNET.Engine.csproj" />
+    <ProjectReference Include="../WolfSlop.Engine/WolfNET.Engine.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.12" />
     <PackageReference Include="SpawnDev.BlazorJS" Version="3.5.30" />
     <None Include="README.md" Pack="true" PackagePath="/" />

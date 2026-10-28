@@ -1,6 +1,6 @@
 # WolfNET.Engine.Browser
 
-The current browser provider for [WolfNET.Engine](../WolfNET.Engine/README.md).
+The current browser provider for [WolfNET.Engine](../WolfSlop.Engine/README.md).
 This .NET 10 Razor class library targets Blazor WebAssembly and owns the browser
 dependencies: SpawnDev.BlazorJS, JavaScript interop, DOM, Canvas 2D, WebGPU and Web Audio.
 
@@ -29,5 +29,5 @@ when leaving a screen. Engine receives only maps, frames, input state, elapsed
 milliseconds and provider interfaces; it never receives browser handles.
 
 Android and native Windows support will use separate providers. This package is
-not a native provider. See the [platform architecture guide](../WolfNET.Engine/PLATFORMS.md)
-and [UI guide](../WolfNET.Engine/UI/README.md) before adding platform-specific code.
+not a native provider. See the [platform architecture guide](../WolfSlop.Engine/PLATFORMS.md)
+and [UI guide](../WolfSlop.Engine/UI/README.md) before adding platform-specific code.

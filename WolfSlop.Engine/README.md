@@ -13,7 +13,7 @@ for provider boundaries and the plan for future Android and native Windows suppo
 
 Reference `WolfNET.Engine.csproj` to use the portable engine in a .NET host or tool.
 Browser applications also reference
-[`WolfNET.Engine.Browser.csproj`](../WolfNET.Engine.Browser/WolfNET.Engine.Browser.csproj).
+[`WolfNET.Engine.Browser.csproj`](../WolfSlop.Engine.Browser/WolfNET.Engine.Browser.csproj).
 That provider supplies `WebGpuRenderer`, `BrowserUiHost`, `BrowserInput`, browser
 audio and `BrowserFrameLoop`, under `WolfNET.Engine.Browser.*` namespaces.
 The Blazor WebAssembly host registers
@@ -126,8 +126,8 @@ tokens to asynchronous loading/preparation.
 
 ```powershell
 dotnet run --project Tests/EngineConsumer/WolfNET.EngineConsumer.csproj
-dotnet pack WolfNET.Engine/WolfNET.Engine.csproj -o artifacts/packages
-dotnet pack WolfNET.Engine.Browser/WolfNET.Engine.Browser.csproj -o artifacts/packages
+dotnet pack WolfSlop.Engine/WolfNET.Engine.csproj -o artifacts/packages
+dotnet pack WolfSlop.Engine.Browser/WolfNET.Engine.Browser.csproj -o artifacts/packages
 ```
 
 The independent consumer references only the engine and exercises its public API.
