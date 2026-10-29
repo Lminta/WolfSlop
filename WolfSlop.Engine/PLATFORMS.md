@@ -1,6 +1,6 @@
 # Platform architecture and future support
 
-WolfNET is intended to support different hosts, including Android and native
+WolfSlop is intended to support different hosts, including Android and native
 Windows. Only the browser provider is implemented today. There are no Android or
 native Windows graphics, audio, windowing or input implementations yet.
 
@@ -8,24 +8,24 @@ native Windows graphics, audio, windowing or input implementations yet.
 
 ```mermaid
 flowchart TD
-    Examples[Browser examples] --> Browser[WolfNET.Engine.Browser]
-    Examples --> Engine[WolfNET.Engine]
+    Examples[Browser examples] --> Browser[WolfSlop.Engine.Browser]
+    Examples --> Engine[WolfSlop.Engine]
     Browser --> Engine
     Native[Future Android / native Windows host] -.-> Provider[Future native provider]
     Native -.-> Engine
     Provider -.-> Engine
 ```
 
-`WolfNET.Engine` is a plain `Microsoft.NET.Sdk` library targeting `net10.0`, with
+`WolfSlop.Engine` is a plain `Microsoft.NET.Sdk` library targeting `net10.0`, with
 no package dependencies or platform attributes. It owns simulation, worlds, map
 compilation, physics, cameras, animation, input state, audio policy, UI layout,
 controls, focus, hit testing and provider contracts. This logic must remain usable
 by ordinary .NET programs, tests and tools without a browser or window.
 
-`WolfNET.Engine.Browser` is a separate Razor class library referencing Engine.
+`WolfSlop.Engine.Browser` is a separate Razor class library referencing Engine.
 It owns WebGPU, DOM events, pointer lock, animation-frame callbacks, Canvas text
 measurement/drawing, native browser text editors/accessibility, Web Audio,
-JavaScript and WGSL assets. Browser types live in `WolfNET.Engine.Browser.*`.
+JavaScript and WGSL assets. Browser types live in `WolfSlop.Engine.Browser.*`.
 
 Applications compose providers and own game rules and assets. Provider startup
 accepts the platform's canvas/window/surface and remains outside Engine. Engine
@@ -100,21 +100,21 @@ assembly does not depend on browser frameworks/providers or have a platform
 restriction. Engine's project has no `PackageReference` or `FrameworkReference`.
 
 ```powershell
-dotnet run --project Tests/EngineConsumer/WolfNET.EngineConsumer.csproj
-dotnet list WolfSlop.Engine/WolfNET.Engine.csproj package --include-transitive
-dotnet pack WolfSlop.Engine/WolfNET.Engine.csproj -o artifacts/packages
-dotnet pack WolfSlop.Engine.Browser/WolfNET.Engine.Browser.csproj -o artifacts/packages
+dotnet run --project Tests/EngineConsumer/WolfSlop.EngineConsumer.csproj
+dotnet list WolfSlop.Engine/WolfSlop.Engine.csproj package --include-transitive
+dotnet pack WolfSlop.Engine/WolfSlop.Engine.csproj -o artifacts/packages
+dotnet pack WolfSlop.Engine.Browser/WolfSlop.Engine.Browser.csproj -o artifacts/packages
 ```
 
 Engine packages contain portable code and documentation. Browser packages contain
 the browser code and assets and declare a dependency on Engine. Browser asset URLs
-are `_content/WolfNET.Engine.Browser/`; native consumers do not receive those assets.
+are `_content/WolfSlop.Engine.Browser/`; native consumers do not receive those assets.
 
 ## Migrating an existing browser host
 
-Add a reference to `WolfNET.Engine.Browser` and import its `.Graphics`, `.Input`,
+Add a reference to `WolfSlop.Engine.Browser` and import its `.Graphics`, `.Input`,
 `.Audio`, `.Core` or `.UI` namespaces where browser implementations are created.
-Portable types retain their `WolfNET.Engine.*` namespaces. Update any manually
-specified browser asset URLs from `_content/WolfNET.Engine/` to
-`_content/WolfNET.Engine.Browser/`. The built-in provider loaders already use the
+Portable types retain their `WolfSlop.Engine.*` namespaces. Update any manually
+specified browser asset URLs from `_content/WolfSlop.Engine/` to
+`_content/WolfSlop.Engine.Browser/`. The built-in provider loaders already use the
 new paths. Scene, map and UI document composition remain the same.

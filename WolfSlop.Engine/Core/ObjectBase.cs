@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace WolfNET.Engine.Core;
+namespace WolfSlop.Engine.Core;
 
 public abstract class ObjectBase : IDisposable
 {

@@ -1,6 +1,6 @@
-# WolfNET.Engine.Browser
+# WolfSlop.Engine.Browser
 
-The current browser provider for [WolfNET.Engine](../WolfSlop.Engine/README.md).
+The current browser provider for [WolfSlop.Engine](../WolfSlop.Engine/README.md).
 This .NET 10 Razor class library targets Blazor WebAssembly and owns the browser
 dependencies: SpawnDev.BlazorJS, JavaScript interop, DOM, Canvas 2D, WebGPU and Web Audio.
 
@@ -11,14 +11,14 @@ Register `AddBlazorJSRuntime()` and start with `BlazorJSRunAsync()`. See
 
 | Namespace | Provider implementation |
 | --- | --- |
-| `WolfNET.Engine.Browser.Graphics` | `WebGpuRenderer`, `ShaderSources`, GPU textures and accelerated sprite selection |
-| `WolfNET.Engine.Browser.UI` | `BrowserUiHost`: Canvas UI, font/image loading, browser text editing and accessibility |
-| `WolfNET.Engine.Browser.Input` | `BrowserInput`, `KeyTracker`, `MouseTracker`: events and pointer capture |
-| `WolfNET.Engine.Browser.Audio` | `BrowserAudioBackend`, `BrowserSfxBackend<TCue>`: Web Audio playback |
-| `WolfNET.Engine.Browser.Core` | `BrowserFrameLoop`: animation-frame scheduling implementing `IFrameLoop` |
+| `WolfSlop.Engine.Browser.Graphics` | `WebGpuRenderer`, `ShaderSources`, GPU textures and accelerated sprite selection |
+| `WolfSlop.Engine.Browser.UI` | `BrowserUiHost`: Canvas UI, font/image loading, browser text editing and accessibility |
+| `WolfSlop.Engine.Browser.Input` | `BrowserInput`, `KeyTracker`, `MouseTracker`: events and pointer capture |
+| `WolfSlop.Engine.Browser.Audio` | `BrowserAudioBackend`, `BrowserSfxBackend<TCue>`: Web Audio playback |
+| `WolfSlop.Engine.Browser.Core` | `BrowserFrameLoop`: animation-frame scheduling implementing `IFrameLoop` |
 
 JavaScript and WGSL shaders ship as static web assets under
-`_content/WolfNET.Engine.Browser/`. Applications supply maps, artwork, clips and settings.
+`_content/WolfSlop.Engine.Browser/`. Applications supply maps, artwork, clips and settings.
 Use a secure browser context (`https` or `localhost`) and a WebGPU-capable device
 for world rendering. `BrowserUiHost` requires in-process WebAssembly interop;
 the `/ui` gallery does not require WebGPU.

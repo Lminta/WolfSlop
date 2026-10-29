@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.Input;
+namespace WolfSlop.Engine.Input;
 
 public interface IMouseInput
 {

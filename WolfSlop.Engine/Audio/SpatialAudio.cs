@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.Audio;
+namespace WolfSlop.Engine.Audio;
 
 public static class SpatialAudio
 {

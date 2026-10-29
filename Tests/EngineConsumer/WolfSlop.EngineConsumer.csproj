@@ -6,6 +6,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../WolfSlop.Engine/WolfNET.Engine.csproj" />
+    <ProjectReference Include="../../WolfSlop.Engine/WolfSlop.Engine.csproj" />
   </ItemGroup>
 </Project>

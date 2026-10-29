@@ -1,7 +1,7 @@
 using System.Numerics;
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Graphics;
 
-namespace WolfNET.Engine.World;
+namespace WolfSlop.Engine.World;
 
 public sealed class MapCompiler
 {

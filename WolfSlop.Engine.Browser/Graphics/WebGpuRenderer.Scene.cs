@@ -2,12 +2,12 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using SpawnDev.BlazorJS;
 using SpawnDev.BlazorJS.JSObjects;
-using WolfNET.Engine.World;
-using WolfNET.Engine.Actors;
+using WolfSlop.Engine.World;
+using WolfSlop.Engine.Actors;
 
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Graphics;
 
-namespace WolfNET.Engine.Browser.Graphics;
+namespace WolfSlop.Engine.Browser.Graphics;
 
 public sealed partial class WebGpuRenderer
 {
@@ -29,7 +29,7 @@ public sealed partial class WebGpuRenderer
 
             _materialsBuffer = _device!.CreateBuffer(new GPUBufferDescriptor
             {
-                Label = "WolfNET Wall Materials",
+                Label = "WolfSlop Wall Materials",
                 Size = checked((ulong)map.Materials.Count * 16),
                 Usage = GPUBufferUsage.Storage | GPUBufferUsage.CopyDst
             });
@@ -48,7 +48,7 @@ public sealed partial class WebGpuRenderer
             using var layout = _renderPipeline!.GetBindGroupLayout(0);
             _renderBindGroup = _device.CreateBindGroup(new GPUBindGroupDescriptor
             {
-                Label = "WolfNET Render Bindings",
+                Label = "WolfSlop Render Bindings",
                 Layout = layout,
                 Entries =
                 [
@@ -120,7 +120,7 @@ public sealed partial class WebGpuRenderer
             _spriteBytes = new byte[checked(_spriteCapacity * SpriteSize)];
             _spriteBuffer = _device!.CreateBuffer(new GPUBufferDescriptor
             {
-                Label = "WolfNET Sprites",
+                Label = "WolfSlop Sprites",
                 Size = checked((ulong)_spriteCapacity * SpriteSize),
                 Usage = GPUBufferUsage.Storage | GPUBufferUsage.CopyDst
             });
@@ -128,7 +128,7 @@ public sealed partial class WebGpuRenderer
             using var layout = _spritePipeline!.GetBindGroupLayout(0);
             _spriteBindGroup = _device.CreateBindGroup(new GPUBindGroupDescriptor
             {
-                Label = "WolfNET Sprite Bindings",
+                Label = "WolfSlop Sprite Bindings",
                 Layout = layout,
                 Entries =
                 [
@@ -145,7 +145,7 @@ public sealed partial class WebGpuRenderer
             using var minimapLayout = _minimapPipeline!.GetBindGroupLayout(0);
             _minimapBindGroup = _device.CreateBindGroup(new GPUBindGroupDescriptor
             {
-                Label = "WolfNET Minimap Bindings",
+                Label = "WolfSlop Minimap Bindings",
                 Layout = minimapLayout,
                 Entries =
                 [

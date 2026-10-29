@@ -1,8 +1,8 @@
 using System.Numerics;
-using WolfNET.Engine.Graphics;
-using WolfNET.Engine.Physics;
+using WolfSlop.Engine.Graphics;
+using WolfSlop.Engine.Physics;
 
-namespace WolfNET.Engine.Actors;
+namespace WolfSlop.Engine.Actors;
 
 public readonly record struct CameraView(Vector2 Position, float Elevation, float Distance);
 

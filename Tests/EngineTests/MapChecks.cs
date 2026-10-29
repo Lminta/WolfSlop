@@ -1,5 +1,5 @@
 using System.Numerics;
-using WolfNET.Engine.Actors.Components;
+using WolfSlop.Engine.Actors.Components;
 
 internal static class MapChecks
 {

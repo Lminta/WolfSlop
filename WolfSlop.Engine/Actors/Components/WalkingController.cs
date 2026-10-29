@@ -1,9 +1,9 @@
 using System.Numerics;
-using WolfNET.Engine.Core;
-using WolfNET.Engine.Physics;
-using WolfNET.Engine.Input;
+using WolfSlop.Engine.Core;
+using WolfSlop.Engine.Physics;
+using WolfSlop.Engine.Input;
 
-namespace WolfNET.Engine.Actors.Components;
+namespace WolfSlop.Engine.Actors.Components;
 
 public class WalkingController : ComponentBase
 {

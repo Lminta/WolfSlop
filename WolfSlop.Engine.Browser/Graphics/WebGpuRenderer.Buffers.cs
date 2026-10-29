@@ -1,12 +1,12 @@
 using System.Numerics;
 using SpawnDev.BlazorJS;
 using SpawnDev.BlazorJS.JSObjects;
-using WolfNET.Engine.World;
-using WolfNET.Engine.Actors;
+using WolfSlop.Engine.World;
+using WolfSlop.Engine.Actors;
 
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Graphics;
 
-namespace WolfNET.Engine.Browser.Graphics;
+namespace WolfSlop.Engine.Browser.Graphics;
 
 public sealed partial class WebGpuRenderer
 {
@@ -37,7 +37,7 @@ public sealed partial class WebGpuRenderer
         _cameraBuffer = _device.CreateBuffer(
             new GPUBufferDescriptor
             {
-                Label = "WolfNET Camera",
+                Label = "WolfSlop Camera",
 
                 Size = (ulong)CameraBufferSize,
 
@@ -55,7 +55,7 @@ public sealed partial class WebGpuRenderer
         _mapInfoBuffer = _device.CreateBuffer(
             new GPUBufferDescriptor
             {
-                Label = "WolfNET Map Info",
+                Label = "WolfSlop Map Info",
 
                 Size = (ulong)MapInfoBufferSize,
 
@@ -70,7 +70,7 @@ public sealed partial class WebGpuRenderer
         _worldMapBuffer = _device.CreateBuffer(
             new GPUBufferDescriptor
             {
-                Label = "WolfNET World Map",
+                Label = "WolfSlop World Map",
 
                 Size = checked(
                     (ulong)mapCapacity * 16),
@@ -86,7 +86,7 @@ public sealed partial class WebGpuRenderer
         _rayHitsBuffer = _device.CreateBuffer(
             new GPUBufferDescriptor
             {
-                Label = "WolfNET Ray Hits",
+                Label = "WolfSlop Ray Hits",
 
                 Size = checked(
                     (ulong)_settings.Width * RayHitSize),

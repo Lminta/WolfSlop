@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.Input;
+namespace WolfSlop.Engine.Input;
 
 /// <summary>Held keys and pending actions, independent of host event lifetimes.</summary>
 public sealed class KeyboardState : IKeyboardInput

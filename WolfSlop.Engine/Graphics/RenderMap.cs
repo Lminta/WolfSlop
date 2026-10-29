@@ -1,6 +1,6 @@
-using WolfNET.Engine.World;
+using WolfSlop.Engine.World;
 
-namespace WolfNET.Engine.Graphics;
+namespace WolfSlop.Engine.Graphics;
 
 [Flags]
 public enum RenderCellFlags : uint

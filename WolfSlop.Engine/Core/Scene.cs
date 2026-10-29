@@ -1,7 +1,7 @@
 using System.Numerics;
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Graphics;
 
-namespace WolfNET.Engine.Core;
+namespace WolfSlop.Engine.Core;
 
 public interface IScene : IDisposable
 {

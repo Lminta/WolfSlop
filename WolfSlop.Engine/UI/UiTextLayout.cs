@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Numerics;
 
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 public interface IUiTextMeasurer
 {

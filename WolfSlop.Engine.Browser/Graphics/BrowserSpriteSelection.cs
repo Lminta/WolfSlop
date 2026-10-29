@@ -2,11 +2,11 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using SpawnDev.BlazorJS;
 using SpawnDev.BlazorJS.JSObjects;
-using WolfNET.Engine.World;
+using WolfSlop.Engine.World;
 
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Graphics;
 
-namespace WolfNET.Engine.Browser.Graphics;
+namespace WolfSlop.Engine.Browser.Graphics;
 
 /// <summary>Keeps the numeric scenery query in the browser; C# resolves the selected artwork.</summary>
 internal sealed class BrowserSpriteSelection(JSObject module) : IDisposable

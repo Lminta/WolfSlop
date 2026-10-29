@@ -2,9 +2,9 @@ using System.Numerics;
 using SpawnDev.BlazorJS;
 using SpawnDev.BlazorJS.JSObjects;
 
-using WolfNET.Engine.Input;
+using WolfSlop.Engine.Input;
 
-namespace WolfNET.Engine.Browser.Input;
+namespace WolfSlop.Engine.Browser.Input;
 
 public sealed class MouseTracker : IMouseInput, IDisposable
 {

@@ -1,8 +1,8 @@
 using System.Numerics;
-using WolfNET.Engine.World;
-using WolfNET.Engine.Core;
-using WolfNET.Engine.Input;
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.World;
+using WolfSlop.Engine.Core;
+using WolfSlop.Engine.Input;
+using WolfSlop.Engine.Graphics;
 
 internal static class EngineChecks
 {

@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.Navigation;
+namespace WolfSlop.Engine.Navigation;
 
 /// <summary>Indexed distance and nearest-point queries along an open or looping polyline.</summary>
 public sealed class PolylinePath

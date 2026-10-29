@@ -1,5 +1,5 @@
 using System.Numerics;
-using WolfNET.Engine.UI;
+using WolfSlop.Engine.UI;
 
 internal static class UiChecks
 {

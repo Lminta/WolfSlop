@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Numerics;
 
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 /// <summary>A retained UI node. A node has one parent; a document owns its attached tree.</summary>
 public class UiElement

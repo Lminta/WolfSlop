@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.Core;
+namespace WolfSlop.Engine.Core;
 
 /// <summary>Limits frame frequency from host timestamps without blocking or accumulating catch-up frames.</summary>
 public sealed class FrameTiming

@@ -1,9 +1,9 @@
 using System.Runtime.InteropServices;
 using SpawnDev.BlazorJS.JSObjects;
 
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Graphics;
 
-namespace WolfNET.Engine.Browser.Graphics;
+namespace WolfSlop.Engine.Browser.Graphics;
 
 public sealed partial class WebGpuRenderer
 {
@@ -20,12 +20,12 @@ public sealed partial class WebGpuRenderer
     {
         using var shader = _device!.CreateShaderModule(new GPUShaderModuleDescriptor
         {
-            Label = "WolfNET Overlay Shader", Code = source
+            Label = "WolfSlop Overlay Shader", Code = source
         });
         _device.PushErrorScope(GPUErrorFilter.Validation);
         _overlayPipeline = _device.CreateRenderPipeline(new GPURenderPipelineDescriptor
         {
-            Label = "WolfNET Overlay Pipeline", Layout = GPUAutoLayoutMode.Auto,
+            Label = "WolfSlop Overlay Pipeline", Layout = GPUAutoLayoutMode.Auto,
             Vertex = new GPUVertexState { Module = shader, EntryPoint = "vertexMain" },
             Fragment = new GPUFragmentState
             {
@@ -53,7 +53,7 @@ public sealed partial class WebGpuRenderer
         if (reportProgress != null) await reportProgress("Preparing screen overlays…");
         _overlaySampler = _device!.CreateSampler(new GPUSamplerDescriptor
         {
-            Label = "WolfNET Overlay Filtering", MinFilter = "linear", MagFilter = "linear",
+            Label = "WolfSlop Overlay Filtering", MinFilter = "linear", MagFilter = "linear",
             AddressModeU = "clamp-to-edge", AddressModeV = "clamp-to-edge"
         });
         // Bind groups are created when the first frame establishes buffer capacity.
@@ -78,7 +78,7 @@ public sealed partial class WebGpuRenderer
             _overlayUpload = new Float32Array(_overlayBytes.Length / 4);
             _overlayBuffer = _device!.CreateBuffer(new GPUBufferDescriptor
             {
-                Label = "WolfNET Screen Layers", Size = (ulong)_overlayBytes.Length,
+                Label = "WolfSlop Screen Layers", Size = (ulong)_overlayBytes.Length,
                 Usage = GPUBufferUsage.Storage | GPUBufferUsage.CopyDst
             });
             using var layout = _overlayPipeline!.GetBindGroupLayout(0);
@@ -136,7 +136,7 @@ public sealed partial class WebGpuRenderer
             // Match missing world-image behavior without preventing scene startup.
             var fallback = _device!.CreateTexture(new GPUTextureDescriptor
             {
-                Label = $"WolfNET Overlay Missing: {path}", Size = [1, 1, 1], Format = "rgba8unorm",
+                Label = $"WolfSlop Overlay Missing: {path}", Size = [1, 1, 1], Format = "rgba8unorm",
                 Usage = GPUTextureUsage.TextureBinding | GPUTextureUsage.CopyDst
             });
             using var pixels = new Uint8Array(new byte[] { 255, 0, 255, 255 });
@@ -150,7 +150,7 @@ public sealed partial class WebGpuRenderer
         ObjectDisposedException.ThrowIf(_disposed, this);
         var texture = _device!.CreateTexture(new GPUTextureDescriptor
         {
-            Label = $"WolfNET Overlay Texture: {path}",
+            Label = $"WolfSlop Overlay Texture: {path}",
             Size = [image.NaturalWidth, image.NaturalHeight, 1], Format = "rgba8unorm",
             Usage = GPUTextureUsage.TextureBinding | GPUTextureUsage.CopyDst | GPUTextureUsage.RenderAttachment
         });

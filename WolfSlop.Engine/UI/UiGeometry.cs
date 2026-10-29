@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 public readonly record struct UiRect(float X, float Y, float Width, float Height)
 {

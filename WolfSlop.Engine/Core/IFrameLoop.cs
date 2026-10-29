@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.Core;
+namespace WolfSlop.Engine.Core;
 
 /// <summary>Host-owned frame scheduling. Deltas are milliseconds; callbacks run on the host's update thread.</summary>
 public interface IFrameLoop : IDisposable

@@ -1,7 +1,7 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Graphics;
 
 internal static class SpriteSelectionFixtures
 {
@@ -51,11 +51,11 @@ internal static class SpriteSelectionFixtures
 
     private static void ValidateUploadLayout()
     {
-        var selector = new WolfNET.Engine.Browser.Graphics.SpriteSelection();
+        var selector = new WolfSlop.Engine.Browser.Graphics.SpriteSelection();
         Sprite[] scenery = [new(new(2, 3), 10, 42) { Scale = new(4, 5), Elevation = .25f, Kind = SpriteKind.PlaneNormalX }];
         Sprite[] actors = [new(new(-2, -3), 20, 0) { Scale = new(6, 7), Elevation = -.5f, SwapRedBlue = true }];
         selector.Resolve(scenery, [2, 9, 1, 0, 0, 0], 2, [1, 0], [8, 9], actors);
-        var words = MemoryMarshal.Cast<WolfNET.Engine.Browser.Graphics.SpriteSelection.VisibleSprite, uint>(selector.Visible);
+        var words = MemoryMarshal.Cast<WolfSlop.Engine.Browser.Graphics.SpriteSelection.VisibleSprite, uint>(selector.Visible);
         uint F(float value) => BitConverter.SingleToUInt32Bits(value);
         uint[] expected = [F(-2), F(-3), 20, 0, F(9), F(7), F(-.5f), 32,
             F(2), F(3), 11, 42, F(8), F(5), F(.25f), (uint)SpriteKind.PlaneNormalX];

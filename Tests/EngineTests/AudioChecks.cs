@@ -1,6 +1,6 @@
 using System.Text.Json;
-using WolfNET.Engine.Audio;
-using WolfNET.Engine.World;
+using WolfSlop.Engine.Audio;
+using WolfSlop.Engine.World;
 
 internal static class AudioChecks
 {

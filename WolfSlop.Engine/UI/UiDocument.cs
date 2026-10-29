@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 /// <summary>Owns layout, draw order, focus and input for a retained UI tree. Contains no browser APIs.</summary>
 public sealed class UiDocument : IDisposable

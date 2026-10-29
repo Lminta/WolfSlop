@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.World;
+namespace WolfSlop.Engine.World;
 
 [Flags]
 public enum SpriteKind : uint

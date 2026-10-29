@@ -2,12 +2,12 @@ using System.Diagnostics;
 using System.Numerics;
 using SpawnDev.BlazorJS;
 using SpawnDev.BlazorJS.JSObjects;
-using WolfNET.Engine.World;
-using WolfNET.Engine.Actors;
+using WolfSlop.Engine.World;
+using WolfSlop.Engine.Actors;
 
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Graphics;
 
-namespace WolfNET.Engine.Browser.Graphics;
+namespace WolfSlop.Engine.Browser.Graphics;
 
 public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
 {
@@ -116,7 +116,7 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         using (var compute = encoder.BeginComputePass(
                    new GPUComputePassDescriptor
                    {
-                       Label = "WolfNET DDA Compute Pass"
+                       Label = "WolfSlop DDA Compute Pass"
                    }))
         {
             compute.SetPipeline(_computePipeline);

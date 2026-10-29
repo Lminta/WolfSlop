@@ -1,9 +1,9 @@
 using SpawnDev.BlazorJS;
 using SpawnDev.BlazorJS.JSObjects;
 
-using WolfNET.Engine.Audio;
+using WolfSlop.Engine.Audio;
 
-namespace WolfNET.Engine.Browser.Audio;
+namespace WolfSlop.Engine.Browser.Audio;
 
 /// <summary>Browser streaming and mixing primitives. Queue policy belongs to MusicPlayer.</summary>
 public sealed class BrowserAudioBackend : IAudioBackend

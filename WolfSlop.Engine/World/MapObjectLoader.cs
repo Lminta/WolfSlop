@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace WolfNET.Engine.World;
+namespace WolfSlop.Engine.World;
 
 public static class MapObjectLoader
 {

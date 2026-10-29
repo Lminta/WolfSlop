@@ -1,9 +1,9 @@
 using System.Numerics;
-using WolfNET.Engine.Core;
-using WolfNET.Engine.Input;
-using WolfNET.Engine.Physics;
+using WolfSlop.Engine.Core;
+using WolfSlop.Engine.Input;
+using WolfSlop.Engine.Physics;
 
-namespace WolfNET.Engine.Actors.Components;
+namespace WolfSlop.Engine.Actors.Components;
 
 /// <summary>Fixed-step, surface-aware car movement. One map cell is one world unit.</summary>
 public sealed class CarController : ComponentBase

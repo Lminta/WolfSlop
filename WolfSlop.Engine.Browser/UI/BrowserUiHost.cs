@@ -2,9 +2,9 @@ using System.Numerics;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
-using WolfNET.Engine.UI;
+using WolfSlop.Engine.UI;
 
-namespace WolfNET.Engine.Browser.UI;
+namespace WolfSlop.Engine.Browser.UI;
 
 /// <summary>Canvas 2D UI presentation and accessible input over an application's existing canvas.
 /// Owns browser resources, not the supplied document. Requires Blazor WebAssembly.</summary>
@@ -32,7 +32,7 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
         var host = new BrowserUiHost();
         try
         {
-            host._module = await runtime.InvokeAsync<IJSObjectReference>("import", cancellationToken, "./_content/WolfNET.Engine.Browser/ui.js");
+            host._module = await runtime.InvokeAsync<IJSObjectReference>("import", cancellationToken, "./_content/WolfSlop.Engine.Browser/ui.js");
             host._callback = DotNetObjectReference.Create(host);
             var reference = await host._module.InvokeAsync<IJSObjectReference>("createUi", cancellationToken, canvas, host._callback);
             host._surface = reference as IJSInProcessObjectReference ?? throw new NotSupportedException("BrowserUiHost requires in-process WebAssembly interop.");

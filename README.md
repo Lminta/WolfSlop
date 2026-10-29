@@ -54,15 +54,15 @@ cd WolfSlop
 dotnet build WolfSlop.slnx
 ```
 
-Reference [the core project](WolfSlop.Engine/WolfNET.Engine.csproj) from your
+Reference [the core project](WolfSlop.Engine/WolfSlop.Engine.csproj) from your
 application. For Blazor WebAssembly, also reference
-[the browser provider](WolfSlop.Engine.Browser/WolfNET.Engine.Browser.csproj).
+[the browser provider](WolfSlop.Engine.Browser/WolfSlop.Engine.Browser.csproj).
 The [engine guide](WolfSlop.Engine/README.md#reference-and-initialize) walks
 through loading a map, creating a scene, and starting a render loop.
 
 Browser rendering requires **HTTPS or localhost** and **WebGPU support**.
-The public APIs use `WolfNET.Engine.*` and `WolfNET.Engine.Browser.*` namespaces.
-Provider assets are served automatically under `_content/WolfNET.Engine.Browser/`.
+The public APIs use `WolfSlop.Engine.*` and `WolfSlop.Engine.Browser.*` namespaces.
+Provider assets are served automatically under `_content/WolfSlop.Engine.Browser/`.
 
 ## Documentation
 
@@ -85,8 +85,8 @@ Use **Node 22 or newer** for the JavaScript checks.
 Run from the repository root, in this order:
 
 ```sh
-dotnet run --project Tests/EngineTests/WolfNET.EngineTests.csproj
-dotnet run --project Tests/EngineConsumer/WolfNET.EngineConsumer.csproj
+dotnet run --project Tests/EngineTests/WolfSlop.EngineTests.csproj
+dotnet run --project Tests/EngineConsumer/WolfSlop.EngineConsumer.csproj
 node --test Tests/sprite-sort.test.mjs Tests/texture-upload.test.mjs Tests/sfx-mixer.test.mjs Tests/ui.test.mjs
 ```
 

@@ -1,10 +1,10 @@
 using SpawnDev.BlazorJS;
 using SpawnDev.BlazorJS.JSObjects;
-using WolfNET.Engine.World;
+using WolfSlop.Engine.World;
 
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Graphics;
 
-namespace WolfNET.Engine.Browser.Graphics;
+namespace WolfSlop.Engine.Browser.Graphics;
 
 /// <summary>Owns a scene's tile array, sky panorama, samplers, and image upload process.</summary>
 internal sealed class GpuSceneTextures : IDisposable
@@ -41,7 +41,7 @@ internal sealed class GpuSceneTextures : IDisposable
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            using var uploader = await js.Import<JSObject>("./_content/WolfNET.Engine.Browser/texture-upload.js");
+            using var uploader = await js.Import<JSObject>("./_content/WolfSlop.Engine.Browser/texture-upload.js");
             cancellationToken.ThrowIfCancellationRequested();
             using var operation = uploader.JSRef!.Call<JSObject>("createUpload");
             using var cancellation = cancellationToken.Register(() => operation.JSRef!.CallVoid("abort"));
@@ -68,7 +68,7 @@ internal sealed class GpuSceneTextures : IDisposable
         using var queue = _device!.Queue;
         _skyBuffer = _device.CreateBuffer(new GPUBufferDescriptor
         {
-            Label = "WolfNET Sky Settings", Size = 16,
+            Label = "WolfSlop Sky Settings", Size = 16,
             Usage = GPUBufferUsage.Uniform | GPUBufferUsage.CopyDst
         });
         using (var settings = new Float32Array(new[] { (sky?.RotationDegrees ?? 0) / 360f, sky == null ? 0f : 1f, 0f, 0f }))
@@ -112,7 +112,7 @@ internal sealed class GpuSceneTextures : IDisposable
             var levels = (int)Math.Floor(Math.Log2(Math.Max(width, height))) + 1;
             _skyTexture = _device.CreateTexture(new GPUTextureDescriptor
             {
-                Label = "WolfNET Sky Panorama", Size = [width, height, 1], MipLevelCount = levels,
+                Label = "WolfSlop Sky Panorama", Size = [width, height, 1], MipLevelCount = levels,
                 Format = "rgba8unorm", Usage = GPUTextureUsage.TextureBinding | GPUTextureUsage.CopyDst | GPUTextureUsage.RenderAttachment
             });
             await uploader.JSRef!.CallVoidAsync("uploadMips", _device, _skyTexture, image,
@@ -166,7 +166,7 @@ internal sealed class GpuSceneTextures : IDisposable
             var mipLevels = (uint)Math.Floor(Math.Log2(size)) + 1;
             _wallTextures = _device!.CreateTexture(new GPUTextureDescriptor
             {
-                Label = "WolfNET Scene Textures",
+                Label = "WolfSlop Scene Textures",
                 Size = [(int)size, (int)size, (int)catalog.LayerCount],
                 MipLevelCount = (int)mipLevels,
                 Format = "rgba8unorm",
@@ -174,13 +174,13 @@ internal sealed class GpuSceneTextures : IDisposable
             });
             _textureSampler = _device.CreateSampler(new GPUSamplerDescriptor
             {
-                Label = "WolfNET Wall and Sprite Filtering",
+                Label = "WolfSlop Wall and Sprite Filtering",
                 MagFilter = "linear", MinFilter = "linear", MipmapFilter = "linear", MaxAnisotropy = _settings.MaxAnisotropy,
                 AddressModeU = "clamp-to-edge", AddressModeV = "clamp-to-edge"
             });
             _surfaceSampler = _device.CreateSampler(new GPUSamplerDescriptor
             {
-                Label = "WolfNET Repeating Surface Filtering",
+                Label = "WolfSlop Repeating Surface Filtering",
                 MagFilter = "linear", MinFilter = "linear", MipmapFilter = "linear", MaxAnisotropy = _settings.MaxAnisotropy,
                 AddressModeU = "repeat", AddressModeV = "repeat"
             });

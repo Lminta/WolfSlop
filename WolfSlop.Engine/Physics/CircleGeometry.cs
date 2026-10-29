@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.Physics;
+namespace WolfSlop.Engine.Physics;
 
 public static class CircleGeometry
 {

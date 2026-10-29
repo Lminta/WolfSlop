@@ -1,1 +1,1 @@
-global using WolfNET.Engine.World;
+global using WolfSlop.Engine.World;

@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.Input;
+namespace WolfSlop.Engine.Input;
 
 /// <summary>Maps application action names to physical key identifiers. Multiple keys may share an action.</summary>
 public sealed class InputBindings

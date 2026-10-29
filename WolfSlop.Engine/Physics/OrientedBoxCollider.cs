@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.Physics;
+namespace WolfSlop.Engine.Physics;
 
 public readonly record struct BoxImpact(int CellX, int CellY, Vector2 Position, float Speed);
 public readonly record struct BoxMotion(Vector2 Position, Vector2 Direction, Vector2 Velocity, bool Collided)

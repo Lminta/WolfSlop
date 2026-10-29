@@ -1,12 +1,12 @@
 using System.Numerics;
 using SpawnDev.BlazorJS;
 using SpawnDev.BlazorJS.JSObjects;
-using WolfNET.Engine.World;
-using WolfNET.Engine.Actors;
+using WolfSlop.Engine.World;
+using WolfSlop.Engine.Actors;
 
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Graphics;
 
-namespace WolfNET.Engine.Browser.Graphics;
+namespace WolfSlop.Engine.Browser.Graphics;
 
 public sealed partial class WebGpuRenderer
 {
@@ -97,7 +97,7 @@ public sealed partial class WebGpuRenderer
 
             CreateBuffers();
 
-            using var spriteModule = await _js.Import<JSObject>("./_content/WolfNET.Engine.Browser/sprite-sort.js");
+            using var spriteModule = await _js.Import<JSObject>("./_content/WolfSlop.Engine.Browser/sprite-sort.js");
             if (cancellationToken.IsCancellationRequested || _disposed)
             {
                 spriteModule.Dispose();
@@ -115,7 +115,7 @@ public sealed partial class WebGpuRenderer
                 _device.CreateShaderModule(
                     new GPUShaderModuleDescriptor
                     {
-                        Label = "WolfNET DDA Shader",
+                        Label = "WolfSlop DDA Shader",
                         Code = computeShaderSource
                     });
 
@@ -123,7 +123,7 @@ public sealed partial class WebGpuRenderer
                 _device.CreateShaderModule(
                     new GPUShaderModuleDescriptor
                     {
-                        Label = "WolfNET Screen Shader",
+                        Label = "WolfSlop Screen Shader",
                         Code = screenShaderSource
                     });
 
@@ -138,7 +138,7 @@ public sealed partial class WebGpuRenderer
                 _device.CreateComputePipeline(
                     new GPUComputePipelineDescriptor
                     {
-                        Label = "WolfNET Raycast Pipeline",
+                        Label = "WolfSlop Raycast Pipeline",
                         Layout = GPUAutoLayoutMode.Auto,
 
                         Compute = new GPUProgrammableStage
@@ -172,7 +172,7 @@ public sealed partial class WebGpuRenderer
                 _device.CreateRenderPipeline(
                     new GPURenderPipelineDescriptor
                     {
-                        Label = "WolfNET Screen Pipeline",
+                        Label = "WolfSlop Screen Pipeline",
                         Layout = GPUAutoLayoutMode.Auto,
 
                         Vertex = new GPUVertexState
@@ -213,7 +213,7 @@ public sealed partial class WebGpuRenderer
             _device.PushErrorScope(GPUErrorFilter.Validation);
             _minimapPipeline = _device.CreateRenderPipeline(new GPURenderPipelineDescriptor
             {
-                Label = "WolfNET Minimap Pipeline",
+                Label = "WolfSlop Minimap Pipeline",
                 Layout = GPUAutoLayoutMode.Auto,
                 Vertex = new GPUVertexState { Module = screenShader, EntryPoint = "vertexMain" },
                 Fragment = new GPUFragmentState
@@ -232,14 +232,14 @@ public sealed partial class WebGpuRenderer
 
             using var spriteShader = _device.CreateShaderModule(new GPUShaderModuleDescriptor
             {
-                Label = "WolfNET Sprite Shader",
+                Label = "WolfSlop Sprite Shader",
                 Code = spriteShaderSource
             });
 
             _device.PushErrorScope(GPUErrorFilter.Validation);
             _spritePipeline = _device.CreateRenderPipeline(new GPURenderPipelineDescriptor
             {
-                Label = "WolfNET Sprite Pipeline",
+                Label = "WolfSlop Sprite Pipeline",
                 Layout = GPUAutoLayoutMode.Auto,
                 Vertex = new GPUVertexState { Module = spriteShader, EntryPoint = "vertexMain" },
                 Fragment = new GPUFragmentState
@@ -279,7 +279,7 @@ public sealed partial class WebGpuRenderer
                     _device.CreateBindGroup(
                         new GPUBindGroupDescriptor
                         {
-                            Label = "WolfNET Compute Bindings",
+                            Label = "WolfSlop Compute Bindings",
                             Layout = layout,
 
                             Entries =

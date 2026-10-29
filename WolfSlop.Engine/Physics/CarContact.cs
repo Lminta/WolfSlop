@@ -1,7 +1,7 @@
 using System.Numerics;
-using WolfNET.Engine.Actors;
+using WolfSlop.Engine.Actors;
 
-namespace WolfNET.Engine.Physics;
+namespace WolfSlop.Engine.Physics;
 
 public readonly record struct CarCollision(Vector2 Position, float Speed);
 

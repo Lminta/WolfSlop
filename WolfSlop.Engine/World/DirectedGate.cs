@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.World;
+namespace WolfSlop.Engine.World;
 
 /// <summary>A finite directed trigger segment for checkpoints, portals, counters, or sensors.</summary>
 public readonly record struct DirectedGate

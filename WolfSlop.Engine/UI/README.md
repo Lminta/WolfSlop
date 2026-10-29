@@ -1,10 +1,10 @@
 # Engine UI
 
-`WolfNET.Engine.UI` is a retained UI system, independent of game rules, Blazor
+`WolfSlop.Engine.UI` is a retained UI system, independent of game rules, Blazor
 components, and the world renderer. Applications build a `UiDocument`, update its
 controls from their state, and present its `UiFrame` through a backend. The browser
 backend draws Canvas 2D over an existing canvas, including a WebGPU canvas.
-It lives in the separate `WolfNET.Engine.Browser` project; the UI model, layout,
+It lives in the separate `WolfSlop.Engine.Browser` project; the UI model, layout,
 controls and input router remain in portable Engine. Android and native Windows
 providers are future work; see [platform architecture](../PLATFORMS.md).
 
@@ -16,8 +16,8 @@ Open `/ui` in Examples for an interactive control gallery.
 
 ```csharp
 using System.Numerics;
-using WolfNET.Engine.UI;
-using WolfNET.Engine.Browser.UI;
+using WolfSlop.Engine.UI;
+using WolfSlop.Engine.Browser.UI;
 
 using var document = new UiDocument { ScaleMode = UiScaleMode.Pixels };
 var panel = document.Root.Add(new UiPanel("status")
@@ -47,7 +47,7 @@ Keep these owners alive until the host component is disposed. A complete host is
 [`UiGallery.razor`](https://github.com/Lminta/WolfSlop.Examples/blob/dev/WolfSlop.Examples/Pages/UiGallery.razor). Game-specific UI
 composition is in [`ExampleHud.cs`](https://github.com/Lminta/WolfSlop.Examples/blob/dev/WolfSlop.Examples/Game/ExampleHud.cs).
 `BrowserUiHost` uses in-process WebAssembly interop; it is not a Blazor Server
-renderer. Its JavaScript is a provider asset at `_content/WolfNET.Engine.Browser/ui.js`.
+renderer. Its JavaScript is a provider asset at `_content/WolfSlop.Engine.Browser/ui.js`.
 
 ## Controls
 

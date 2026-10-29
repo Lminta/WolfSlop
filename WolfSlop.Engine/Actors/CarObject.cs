@@ -1,9 +1,9 @@
 using System.Numerics;
-using WolfNET.Engine.Core;
-using WolfNET.Engine.Input;
-using WolfNET.Engine.Actors.Components;
+using WolfSlop.Engine.Core;
+using WolfSlop.Engine.Input;
+using WolfSlop.Engine.Actors.Components;
 
-namespace WolfNET.Engine.Actors;
+namespace WolfSlop.Engine.Actors;
 
 public sealed class CarObject : ObjectBase, IControlledActor
 {
