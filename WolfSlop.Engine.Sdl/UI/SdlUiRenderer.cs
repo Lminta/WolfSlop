@@ -9,6 +9,10 @@ namespace WolfSlop.Engine.Sdl.UI;
 public sealed class SdlUiRenderer(IAssetSource assets) : IUiRenderer, IUiTextMeasurer
 {
     private readonly Dictionary<string, SKBitmap> _images = [];
+    private sealed record ScaledImage(string Source, SKRect Crop, SKBitmap Bitmap);
+    private readonly Dictionary<string, ScaledImage> _scaledImages = [];
+    private readonly HashSet<string> _usedScaledImages = [];
+    private readonly List<string> _unusedScaledImages = [];
     private readonly Dictionary<UiFont, SKFont> _fonts = [];
     private readonly Dictionary<string, SKTypeface> _typefaces = [];
     private SKBitmap? _bitmap;
@@ -39,6 +43,7 @@ public sealed class SdlUiRenderer(IAssetSource assets) : IUiRenderer, IUiTextMea
     }
     public void Render(UiFrame frame)
     {
+        _usedScaledImages.Clear();
         var width = Math.Max(1, (int)MathF.Ceiling(frame.Width)); var height = Math.Max(1, (int)MathF.Ceiling(frame.Height));
         if (_bitmap == null || _bitmap.Width != width || _bitmap.Height != height)
         { _bitmap?.Dispose(); _bitmap = new(new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Premul)); }
@@ -81,6 +86,31 @@ public sealed class SdlUiRenderer(IAssetSource assets) : IUiRenderer, IUiTextMea
                     canvas.ClipRect(new SKRect(0, 0, node.Width, node.Height));
                 }
                 paint.Style = SKPaintStyle.Fill; paint.Color = SKColors.White.WithAlpha((byte)(255 * node.Opacity));
+                // Resample large UI assets once at their displayed size. In particular,
+                // rotating a downscaled wheel should not sample the full source bitmap
+                // on every frame. Keep the node transform and opacity live.
+                var scaledWidth = (int)MathF.Ceiling(dst.Width);
+                var scaledHeight = (int)MathF.Ceiling(dst.Height);
+                if (scaledWidth > 0 && scaledHeight > 0 && scaledWidth <= width * 2 && scaledHeight <= height * 2 &&
+                    (scaledWidth != src.Width || scaledHeight != src.Height))
+                {
+                    _usedScaledImages.Add(node.Id);
+                    if (!_scaledImages.TryGetValue(node.Id, out var scaled) || scaled.Source != source || scaled.Crop != src ||
+                        scaled.Bitmap.Width != scaledWidth || scaled.Bitmap.Height != scaledHeight)
+                    {
+                        scaled?.Bitmap.Dispose();
+                        var bitmap = new SKBitmap(new SKImageInfo(scaledWidth, scaledHeight, SKColorType.Rgba8888, SKAlphaType.Premul));
+                        using (var imageCanvas = new SKCanvas(bitmap))
+                        {
+                            imageCanvas.Clear(SKColors.Transparent);
+                            imageCanvas.DrawBitmap(image, src, new SKRect(0, 0, scaledWidth, scaledHeight));
+                        }
+                        scaled = new(source, src, bitmap);
+                        _scaledImages[node.Id] = scaled;
+                    }
+                    image = scaled.Bitmap;
+                    src = new(0, 0, image.Width, image.Height);
+                }
                 canvas.DrawBitmap(image, src, dst, paint);
             }
             if (node.TextLayout is { } layout && node.Font is { } font)
@@ -121,10 +151,17 @@ public sealed class SdlUiRenderer(IAssetSource assets) : IUiRenderer, IUiTextMea
             }
             canvas.Restore();
         }
+        // Hidden/removed controls must not retain viewport-sized native allocations.
+        _unusedScaledImages.Clear();
+        foreach (var id in _scaledImages.Keys)
+            if (!_usedScaledImages.Contains(id)) _unusedScaledImages.Add(id);
+        foreach (var id in _unusedScaledImages)
+        { _scaledImages[id].Bitmap.Dispose(); _scaledImages.Remove(id); }
     }
     public void Dispose()
     {
         _bitmap?.Dispose(); foreach (var image in _images.Values) image.Dispose();
+        foreach (var image in _scaledImages.Values) image.Bitmap.Dispose();
         foreach (var font in _fonts.Values) font.Dispose();
         foreach (var typeface in _typefaces.Values) typeface.Dispose();
     }
