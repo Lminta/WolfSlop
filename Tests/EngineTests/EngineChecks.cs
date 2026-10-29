@@ -70,6 +70,16 @@ internal static class EngineChecks
         Throws<ArgumentException>(() => new RendererSettings(targetFPS: 0).Validate());
         Throws<ArgumentException>(() => new RendererSettings { FovDegrees = float.NaN }.Validate());
         Throws<ArgumentException>(() => new RendererSettings { MaxAnisotropy = 17 }.Validate());
+        Check(new RendererSettings().ColumnInterlaceFactor == 1, "Column interlacing must be off by default.");
+        foreach (var factor in new[] { 1, 2, 3 })
+        {
+            var settings = System.Text.Json.JsonSerializer.Deserialize<RendererSettings>(
+                $"{{\"columnInterlaceFactor\":{factor}}}", new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+            settings.Validate();
+            Check(settings.ColumnInterlaceFactor == factor, "Graphics JSON did not load columnInterlaceFactor.");
+        }
+        foreach (var invalidFactor in new[] { -1, 0, 4, int.MaxValue })
+            Throws<ArgumentException>(() => new RendererSettings { ColumnInterlaceFactor = invalidFactor }.Validate());
         Check(new RendererSettings().RenderDistance == 60 && new RendererSettings().FogStartDistance == 40,
             "Default fog must start at forty map squares and end at sixty.");
         var distanceSettings = System.Text.Json.JsonSerializer.Deserialize<RendererSettings>(

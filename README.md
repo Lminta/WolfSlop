@@ -87,7 +87,7 @@ Run from the repository root, in this order:
 ```sh
 dotnet run --project Tests/EngineTests/WolfNET.EngineTests.csproj
 dotnet run --project Tests/EngineConsumer/WolfNET.EngineConsumer.csproj
-node --test Tests/sprite-sort.test.mjs Tests/texture-upload.test.mjs Tests/sfx-mixer.test.mjs Tests/ui.test.mjs
+node --test Tests/sprite-sort.test.mjs Tests/texture-upload.test.mjs Tests/sfx-mixer.test.mjs Tests/ui.test.mjs Tests/frame-submission.test.mjs
 ```
 
 The engine checks generate the native sprite-order reference fixtures in

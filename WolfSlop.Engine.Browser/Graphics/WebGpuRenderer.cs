@@ -13,7 +13,7 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
 {
     private const uint WorkgroupSize = 64;
     private const int RayHitSize = 16;
-    private const int CameraBufferSize = 48;
+    private const int CameraBufferSize = 64;
     private const int MapInfoBufferSize = 16;
     private const int SpriteSize = 32;
 
@@ -22,6 +22,7 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
 
     private GPUDevice? _device;
     private GPUCanvasContext? _context;
+    private JSObject? _frameSubmission;
 
     private GPUComputePipeline? _computePipeline;
     private GPURenderPipeline? _renderPipeline;
@@ -57,7 +58,7 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
     private GpuSceneTextures? _textures;
 
     // Reusable CPU buffers.
-    private readonly float[] _cameraData = new float[12];
+    private readonly float[] _cameraData = new float[16];
     private GPUBuffer? _materialsBuffer;
     private TextureCatalog? _preparedTextures;
     private RenderMap? _uploadedMap;
@@ -98,8 +99,9 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         using var queue = _device.Queue;
         UpdateMap(map, queue);
 
-        // 2. Update camera every frame.
-        UpdateCamera(position, direction, plane, pitch, elevation, queue);
+        // 2. A new scene or mode starts with a complete frame before rotating columns.
+        var (columnStep, columnPhase) = PrepareColumnFrame();
+        UpdateCamera(position, direction, plane, pitch, elevation, columnStep, columnPhase, queue);
         UpdateOverlays(frame.Overlays);
         var selectionStart = _profiling ? Stopwatch.GetTimestamp() : 0;
         _browserSprites!.Select(_spriteSelection, map.Sprites, position, direction, plane, _settings.RenderDistance,
@@ -108,95 +110,22 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         UpdateSprites(queue);
         var submissionStart = _profiling ? Stopwatch.GetTimestamp() : 0;
 
-        // 3. Create GPU command encoder.
-        using var encoder =
-            _device.CreateCommandEncoder();
-
-        // 4. Compute pass: one DDA ray per screen column.
-        using (var compute = encoder.BeginComputePass(
-                   new GPUComputePassDescriptor
-                   {
-                       Label = "WolfNET DDA Compute Pass"
-                   }))
+        // Encode the GPU frame in one browser call. Per-command WASM interop
+        // otherwise costs more CPU time than the skipped rays save on the GPU.
+        uint columns = ((uint)_settings.Width + (uint)columnStep - 1 - (uint)columnPhase) / (uint)columnStep;
+        uint workgroups = (columns + WorkgroupSize - 1) / WorkgroupSize;
+        var submission = _frameSubmission!.JSRef!;
+        if (frame.Overlays.Count == 0 && !frame.ShowMinimap)
+            submission.CallVoid("render", columnStep, workgroups, _spriteSelection.Visible.Length);
+        else
         {
-            compute.SetPipeline(_computePipeline);
-
-            compute.SetBindGroup(
-                0,
-                _computeBindGroup);
-
-            uint workgroups =
-                ((uint)_settings.Width + WorkgroupSize - 1)
-                / WorkgroupSize;
-
-            compute.DispatchWorkgroups(workgroups);
-
-            compute.End();
-        }
-
-        // 5. Acquire the current canvas texture.
-        using var canvasTexture =
-            _context.GetCurrentTexture();
-
-        using var canvasView =
-            canvasTexture.CreateView();
-
-        // 6. Render pass: shade pixels using RayHit[].
-        using (var pass = encoder.BeginRenderPass(
-                   new GPURenderPassDescriptor
-                   {
-                       ColorAttachments =
-                       [
-                           new GPURenderPassColorAttachment
-                           {
-                               View = canvasView,
-
-                               ClearValue = new double[]
-                               {
-                                   0.0,
-                                   0.0,
-                                   0.0,
-                                   1.0
-                               },
-
-                               LoadOp = GPULoadOp.Clear,
-                               StoreOp = GPUStoreOp.Store
-                           }
-                       ]
-                   }))
-        {
-            pass.SetPipeline(_renderPipeline);
-
-            pass.SetBindGroup(
-                0,
-                _renderBindGroup);
-
-            // Fullscreen triangle.
-            pass.Draw(3);
-
-            if (_spriteSelection.Visible.Length > 0)
-            {
-                pass.SetPipeline(_spritePipeline);
-                pass.SetBindGroup(0, _spriteBindGroup!);
-                pass.Draw(6, (uint)_spriteSelection.Visible.Length);
-            }
-
-            DrawOverlays(pass, frame.Overlays);
-
-            if (frame.ShowMinimap)
-            {
-                pass.SetPipeline(_minimapPipeline);
-                pass.SetBindGroup(0, _minimapBindGroup!);
-                pass.Draw(3);
-            }
-
+            using var pass = submission.Call<GPURenderPassEncoder>("begin", columnStep, workgroups, _spriteSelection.Visible.Length);
+            DrawScreenLayers(pass, frame);
             pass.End();
+            submission.CallVoid("submit");
         }
-
-        // 7. Submit compute and render passes.
-        using var commands = encoder.Finish();
-
-        queue.Submit([commands]);
+        _columnFrameValid = true;
+        if (columnStep > 1) _columnPhase = (_columnPhase + 1) % _columnFactor;
         if (_profiling) ReportProfile(selectionStart, uploadStart, submissionStart);
 
         _frameCount++;
@@ -269,9 +198,12 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         _renderPipeline?.Dispose();
         _spritePipeline?.Dispose();
         _minimapPipeline?.Dispose();
+        _presentPipeline?.Dispose();
         _overlayPipeline?.Dispose();
 
         _context?.Dispose();
+        _frameSubmission?.Dispose();
+        _frameSubmission = null;
         _cameraUpload?.Dispose();
         _spriteCountUpload?.Dispose();
         _browserSprites?.Dispose();

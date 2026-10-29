@@ -22,7 +22,7 @@ public sealed partial class WebGpuRenderer
             _settings.MaxMapWidth *
             _settings.MaxMapHeight);
 
-        _cameraUpload = new Float32Array(12);
+        _cameraUpload = new Float32Array(16);
         _spriteCountUpload = new Uint32Array(1);
 
 
@@ -32,7 +32,8 @@ public sealed partial class WebGpuRenderer
         // plane      vec2f
         // screenSize vec2f
         // look       vec4f (pitch, elevation, render distance, fog start)
-        // Total: 48 bytes
+        // columns    vec4f (column step, rotating phase, unused, unused)
+        // Total: 64 bytes
 
         _cameraBuffer = _device.CreateBuffer(
             new GPUBufferDescriptor
@@ -149,7 +150,7 @@ public sealed partial class WebGpuRenderer
         Vector2 direction,
         Vector2 plane,
         float pitch,
-        float elevation, GPUQueue queue)
+        float elevation, int columnStep, int columnPhase, GPUQueue queue)
     {
         if (_device == null || _cameraBuffer == null)
         {
@@ -158,7 +159,7 @@ public sealed partial class WebGpuRenderer
         }
 
         // Must match Camera in raycast.wgsl
-        // and walls.wgsl / sprites.wgsl (48 bytes including distance/fog settings).
+        // and walls.wgsl / sprites.wgsl (64 bytes including interlacing).
 
         _cameraData[0] = position.X;
         _cameraData[1] = position.Y;
@@ -175,6 +176,8 @@ public sealed partial class WebGpuRenderer
         _cameraData[9] = elevation;
         _cameraData[10] = _settings.RenderDistance;
         _cameraData[11] = _settings.FogStartDistance;
+        _cameraData[12] = columnStep;
+        _cameraData[13] = columnPhase;
 
         Buffer.BlockCopy(_cameraData, 0, _cameraBytes, 0, CameraBufferSize);
         _cameraUpload!.WriteBytes(_cameraBytes);

@@ -5,6 +5,7 @@ struct Camera {
     plane: vec2f,
     screenSize: vec2f,
     look: vec4f, // pitch, camera elevation, render distance, fog start.
+    columns: vec4f, // column step, rotating phase, unused, unused.
 };
 
 struct MapInfo {
@@ -41,7 +42,7 @@ var<uniform> mapInfo: MapInfo;
 
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) id: vec3u) {
-    let x = id.x;
+    let x = id.x * u32(camera.columns.x) + u32(camera.columns.y);
     let screenWidth = u32(camera.screenSize.x);
 
     if (x >= screenWidth) {

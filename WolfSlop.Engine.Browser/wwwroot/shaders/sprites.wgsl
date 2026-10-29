@@ -4,6 +4,7 @@ struct Camera {
     plane: vec2f,
     screenSize: vec2f,
     look: vec4f, // pitch, camera elevation, render distance, fog start.
+    columns: vec4f, // column step, rotating phase, unused, unused.
 };
 
 struct RayHit {
@@ -52,6 +53,15 @@ struct VertexOutput {
 @group(0) @binding(4) var spriteSampler: sampler;
 @group(0) @binding(5) var<storage, read> worldMap: array<RenderCell>;
 @group(0) @binding(6) var<uniform> mapInfo: MapInfo;
+
+fn packedPosition(position: vec4f) -> vec4f {
+    if (camera.columns.x == 1.0) { return position; }
+    let step = camera.columns.x;
+    let packedWidth = ceil(camera.screenSize.x / step);
+    let screenX = (position.x + position.w) * camera.screenSize.x * 0.5;
+    let packedX = (screenX + position.w * ((step - 1.0) * 0.5 - camera.columns.y)) / step;
+    return vec4f(2.0 * packedX / packedWidth - position.w, position.yzw);
+}
 
 @vertex
 fn vertexMain(
@@ -110,6 +120,7 @@ fn vertexMain(
             pointDepth - near,
             pointDepth
         );
+        output.position = packedPosition(output.position);
         return output;
     }
     // Collapse sprites behind or on the camera plane to an offscreen point.
@@ -127,19 +138,22 @@ fn vertexMain(
     );
     let pixel = center + (output.uv - vec2f(0.5)) * size * sprite.scale;
     let ndc = pixel / camera.screenSize * vec2f(2.0, -2.0) + vec2f(-1.0, 1.0);
-    output.position = vec4f(ndc, 0.0, 1.0);
+    output.position = packedPosition(vec4f(ndc, 0.0, 1.0));
     return output;
 }
 
 @fragment
 fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
     // Evaluate derivatives before the per-column occlusion branch/discard.
-    let gradientX = dpdx(input.uv);
+    let gradientX = dpdx(input.uv) / camera.columns.x;
     let gradientY = dpdy(input.uv);
-    let ray = camera.direction + camera.plane * (2.0 * input.position.x / camera.screenSize.x - 1.0);
+    let position = vec2f((input.position.x - 0.5) * camera.columns.x + camera.columns.y + 0.5,
+                         input.position.y);
+    if (position.x >= camera.screenSize.x) { discard; }
+    let ray = camera.direction + camera.plane * (2.0 * position.x / camera.screenSize.x - 1.0);
     let worldDistance = input.depth * length(ray);
     if (camera.look.z > 0.0 && worldDistance >= camera.look.z) { discard; }
-    let hit = rayHits[u32(input.position.x)];
+    let hit = rayHits[u32(position.x)];
     // Ray depth only occludes the projected wall, not the sky above its roof.
     // Match the wall pass's bounds, including pitch and camera elevation.
     if (hit.hitCell != 0u && hit.hitCell != input.ownerCell && input.depth >= hit.distance) {

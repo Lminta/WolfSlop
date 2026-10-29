@@ -81,6 +81,8 @@ public sealed partial class WebGpuRenderer
 
     public void ReleaseScene()
     {
+        _frameSubmission?.JSRef!.CallVoid("releaseScene");
+        ReleaseColumnFrame();
         ReleaseOverlays();
         _sceneAnimationClock.Reset();
         _preparedTextures = null;
@@ -156,6 +158,7 @@ public sealed partial class WebGpuRenderer
                     BufferEntry(5, _spriteBuffer)
                 ]
             });
+            _frameSubmission!.JSRef!.CallVoid("setScene", _renderBindGroup!, _spriteBindGroup);
         }
 
         // The third u32 of MapInfo counts active sprites, excluding spare buffer capacity.

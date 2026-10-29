@@ -11,6 +11,8 @@ public class RendererSettings(int width = 1920, int height = 1080, int targetFPS
     public float TargetFrameInterval => 1000.0f / TargetFPS;
 
     public ushort MaxAnisotropy { get; init; } = 4;
+    // 1 refreshes every column; 2 or 3 rotate through subsets of columns each frame.
+    public int ColumnInterlaceFactor { get; set; } = 1;
     // Horizontal field of view. The default preserves the original 0.66 camera plane.
     public float FovDegrees { get; init; } = 66.85f;
     // Horizontal world distances in map squares.
@@ -24,6 +26,8 @@ public class RendererSettings(int width = 1920, int height = 1080, int targetFPS
     {
         if (MaxAnisotropy is < 1 or > 16)
             throw new ArgumentException("Graphics maxAnisotropy must be between 1 and 16.");
+        if (ColumnInterlaceFactor is < 1 or > 3)
+            throw new ArgumentException("Graphics columnInterlaceFactor must be 1, 2, or 3.");
         if (TargetFPS <= 0)
             throw new ArgumentException("Graphics targetFPS must be positive.");
         if (!float.IsFinite(FovDegrees) || FovDegrees < 1 || FovDegrees > 179)

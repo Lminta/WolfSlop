@@ -23,6 +23,17 @@ Use a secure browser context (`https` or `localhost`) and a WebGPU-capable devic
 for world rendering. `BrowserUiHost` requires in-process WebAssembly interop;
 the `/ui` gallery does not require WebGPU.
 
+`RendererSettings.ColumnInterlaceFactor` selects full rendering (`1`, the default)
+or alternating vertical columns (`2` or `3`). It can change between frames.
+Interlaced modes retain world colors in an offscreen texture and render the current
+phase into a compact half-width or third-width target. Rays and sprite projections
+use the original pixel centers; presentation combines the new columns with history.
+World command encoding runs in one browser call for all modes, avoiding per-command
+WASM interop overhead. The first frame
+after preparing a scene or changing modes is complete. Screen overlays and the
+minimap render after presentation every frame. Fast motion can show temporal trails;
+the actual FPS gain depends on the GPU, CPU workload, target FPS, and display refresh rate.
+
 The UI host sends changed display-list entries and preserves browser-side vector
 geometry between frames. View transforms and text updates reuse immutable drawings
 and cached text layouts; document changes and resize still refresh the full view.

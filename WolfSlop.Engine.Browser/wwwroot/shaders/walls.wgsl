@@ -5,6 +5,7 @@ struct Camera {
     plane: vec2f,
     screenSize: vec2f,
     look: vec4f, // pitch, camera elevation, render distance, fog start.
+    columns: vec4f, // column step, rotating phase, unused, unused.
 };
 
 struct RenderCell {
@@ -68,6 +69,22 @@ var wallTextures: texture_2d_array<f32>;
 @group(0) @binding(10) var skySampler: sampler;
 // x: panorama rotation in turns; y: sky enabled.
 @group(0) @binding(11) var<uniform> skySettings: vec4f;
+
+// Only the presentation pipeline binds this texture; scene passes never sample their attachment.
+@group(0) @binding(12) var columnFrame: texture_2d<f32>;
+@group(0) @binding(13) var columnStrip: texture_2d<f32>;
+
+@fragment
+fn presentMain(input: VertexOutput) -> @location(0) vec4f {
+    let x = u32(input.position.x);
+    var column = x / 3u;
+    var phase = x % 3u;
+    if (camera.columns.x == 2.0) { column = x >> 1u; phase = x & 1u; }
+    if (phase == u32(camera.columns.y)) {
+        return textureLoad(columnStrip, vec2i(i32(column), i32(input.position.y)), 0);
+    }
+    return textureLoad(columnFrame, vec2i(input.position.xy), 0);
+}
 
 // A final overlay pass on the game canvas, using the compute pass's DDA results.
 @fragment
@@ -246,7 +263,10 @@ fn floorCeilingColor(position: vec2f) -> vec4f {
 fn fragmentMain(
     input: VertexOutput
 ) -> @location(0) vec4f {
-    let x = u32(input.position.x);
+    // Packed target pixels correspond to full-resolution pixel-center rays.
+    let position = vec2f((input.position.x - 0.5) * camera.columns.x + camera.columns.y + 0.5,
+                         input.position.y);
+    let x = u32(position.x);
 
     if (x >= u32(camera.screenSize.x)) {
         return vec4f(0.0, 0.0, 0.0, 1.0);
@@ -255,12 +275,12 @@ fn fragmentMain(
     let hit = rayHits[x];
 
     if (hit.hitCell == 0u || hit.distance <= 0.0) {
-        return floorCeilingColor(input.position.xy);
+        return floorCeilingColor(position);
     }
 
     let cell = worldMap[hit.hitCell - 1u];
     if ((cell.flags & 2u) == 0u) {
-        return floorCeilingColor(input.position.xy);
+        return floorCeilingColor(position);
     }
     // An opaque door already stopped this exact pixel-center ray. Draw its
     // panel here as well as in the sprite pass so subpixel triangle edge
@@ -283,16 +303,16 @@ fn fragmentMain(
         lineHeight * 0.5 + wallCenter
     );
 
-    let y = input.position.y;
+    let y = position.y;
 
     if (y < drawStart || y >= drawEnd) {
-        return floorCeilingColor(input.position.xy);
+        return floorCeilingColor(position);
     }
 
     // Use the full projected wall, even when its top is above the screen.
     let wallV = (y - wallCenter) / lineHeight + 0.5;
     // Side 0 crosses an X face; side 1 crosses a Y face.
-    let cameraX = 2.0 * input.position.x / camera.screenSize.x - 1.0;
+    let cameraX = 2.0 * position.x / camera.screenSize.x - 1.0;
     let rayDir = camera.direction + camera.plane * cameraX;
     let material = materials[cell.materialIndex];
     var layer = select(material.east, material.west, rayDir.x > 0.0);

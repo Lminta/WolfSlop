@@ -82,12 +82,14 @@ public sealed partial class WebGpuRenderer
                     "WebGPU canvas context is unavailable.");
 
             var format = gpu.GetPreferredCanvasFormat();
+            _canvasFormat = format;
 
             _context.Configure(
                 new GPUCanvasConfiguration
                 {
                     Device = _device,
-                    Format = format
+                    Format = format,
+                    Usage = (uint)(GPUTextureUsage.RenderAttachment | GPUTextureUsage.CopySrc)
                 });
 
             Console.WriteLine(
@@ -209,6 +211,8 @@ public sealed partial class WebGpuRenderer
                     renderError.Message);
             }
 
+            await CreatePresentPipelineAsync(screenShader, format, cancellationToken);
+
             // Reuse the screen shader module and all existing scene buffers.
             _device.PushErrorScope(GPUErrorFilter.Validation);
             _minimapPipeline = _device.CreateRenderPipeline(new GPURenderPipelineDescriptor
@@ -291,6 +295,12 @@ public sealed partial class WebGpuRenderer
                             ]
                         });
             }
+
+            using var submissionModule = await _js.Import<JSObject>("./_content/WolfNET.Engine.Browser/frame-submission.js");
+            cancellationToken.ThrowIfCancellationRequested();
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            _frameSubmission = submissionModule.JSRef!.CallApply<JSObject>("createSubmission",
+                new object[] { _device, _context, _computePipeline, _computeBindGroup, _renderPipeline, _spritePipeline, _presentPipeline! });
 
             _uploadedMap = null;
             _frameCount = 0;

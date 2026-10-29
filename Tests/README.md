@@ -9,7 +9,8 @@ It also generates sprite-sort reference data from seeded, procedural scenes.
 `EngineConsumer` references the portable engine alone and checks its public
 API, custom metadata/input/audio, rendering contracts, scene lifetime, retained
 UI, and absence of browser dependencies. Node checks cover sprite selection and
-ordering, texture uploads and cancellation, audio mixing, and UI drawing/input.
+ordering, texture uploads and cancellation, audio mixing, UI drawing/input, and
+frame submission, compact world targets, history copies, and screen-layer ordering.
 
 Game-specific maps, scene assembly, character presentation, racing, opponents,
 sound configuration, and full-browser application checks live in the consuming
