@@ -2,7 +2,7 @@
 
 Portable .NET 10 worlds, scenes, physics, input state, audio policy, and retained UI. The core has no NuGet dependencies and never receives a platform window or GPU handle.
 
-Reference `WolfSlop.Engine.csproj` from a game or tool. Interactive native hosts additionally reference `WolfSlop.Engine.Sdl.csproj` and supply SDL3, SDL_mixer, and SkiaSharp native runtime packages for their platform.
+Reference `WolfSlop.Engine.csproj` from a game or tool. The Windows host additionally references `WolfSlop.Engine.Sdl.csproj` and supplies SDL3, SDL_mixer, and SkiaSharp Windows runtime packages.
 
 Load assets through `IAssetSource`. `DirectoryAssetSource` confines file access to a content directory; packaged hosts can implement the interface themselves. `ReadJsonAsync<T>` supports map/settings definitions and polymorphic object metadata. `TileMap.LoadAsync(assets, path, maxWidth, maxHeight)` resolves object files relative to their map.
 

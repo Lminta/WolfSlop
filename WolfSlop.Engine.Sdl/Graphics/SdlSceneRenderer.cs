@@ -49,7 +49,6 @@ public sealed unsafe class SdlSceneRenderer : ISceneRenderer, IDisposable
 
     private void UpdateFiltering()
     {
-        if (OperatingSystem.IsAndroid()) _settings.MaxAnisotropy = 1;
         foreach (var sampler in _samplers) SDL.ReleaseGPUSampler(_gpu.Handle, sampler);
         _samplers.Clear();
         nint Create(SDL.GPUSamplerAddressMode u, SDL.GPUSamplerAddressMode v)

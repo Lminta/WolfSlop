@@ -15,20 +15,7 @@ public sealed unsafe class GpuDevice : IDisposable
     public GpuDevice(nint window, bool debug = false, string? driver = null)
     {
         Window = window;
-        var properties = SDL.CreateProperties();
-        try
-        {
-            SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersSPIRVBoolean, true);
-            SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateShadersDXILBoolean, true);
-            SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateDebugModeBoolean, debug);
-            if (driver != null) SDL.SetStringProperty(properties, SDL.Props.GPUDeviceCreateNameString, driver);
-            SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateFeatureClipDistanceBoolean, false);
-            SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateFeatureDepthClampingBoolean, false);
-            SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateFeatureIndirectDrawFirstInstanceBoolean, false);
-            SDL.SetBooleanProperty(properties, SDL.Props.GPUDeviceCreateFeatureAnisotropyBoolean, !OperatingSystem.IsAndroid());
-            Handle = Require(SDL.CreateGPUDeviceWithProperties(properties));
-        }
-        finally { SDL.DestroyProperties(properties); }
+        Handle = Require(SDL.CreateGPUDevice(SDL.GPUShaderFormat.SPIRV | SDL.GPUShaderFormat.DXIL, debug, driver));
         if (!SDL.ClaimWindowForGPUDevice(Handle, window)) { SDL.DestroyGPUDevice(Handle); throw new InvalidOperationException(SDL.GetError()); }
         if (!SDL.SetGPUSwapchainParameters(Handle, window, SDL.GPUSwapchainComposition.SDR, SDL.GPUPresentMode.Immediate))
             Check(SDL.SetGPUSwapchainParameters(Handle, window, SDL.GPUSwapchainComposition.SDR, SDL.GPUPresentMode.VSync));
