@@ -76,6 +76,9 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
         ArgumentNullException.ThrowIfNull(frame);
         if (ReferenceEquals(_lastFrame, frame)) return;
         var nodes = new List<UiRenderNode>();
+        var transforms = new List<TransformUpdate>();
+        var texts = new List<TextUpdate>();
+        var canvases = new List<CanvasUpdate>();
         foreach (var node in frame.Nodes)
         {
             var next = node;
@@ -85,13 +88,38 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
             if (previous != null && node.Clips.SequenceEqual(previous.Clips)) next = node with { Clips = previous.Clips };
             if (next == previous) continue;
             _sentNodes[node.Id] = next;
+            if (previous != null && next with { Transform = previous.Transform } == previous)
+            {
+                transforms.Add(new(node.Id, next.Transform));
+                continue;
+            }
+            if (previous != null && next.Kind == "text" && next with { Content = previous.Content, TextLayout = previous.TextLayout,
+                    Width = previous.Width, Height = previous.Height, Transform = previous.Transform } == previous)
+            {
+                texts.Add(new(next.Id, next.Content, next.TextLayout, next.Width, next.Height, next.Transform));
+                continue;
+            }
+            if (previous != null && next.Kind == "canvas" &&
+                next with { Drawing = previous.Drawing, DrawingTransform = previous.DrawingTransform } == previous)
+            {
+                var changed = next.Drawing?.Revision != previous.Drawing?.Revision;
+                canvases.Add(new(next.Id, changed ? next.Drawing : null, next.DrawingTransform, changed));
+                continue;
+            }
             nodes.Add(next.Drawing != null && next.Drawing.Revision == previous?.Drawing?.Revision
                 ? next with { Drawing = null } : next);
         }
         var ids = frame.Nodes.Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
         foreach (var id in _sentNodes.Keys.Where(id => !ids.Contains(id)).ToArray()) _sentNodes.Remove(id);
-        _surface!.InvokeVoid("renderDelta", new { frame.Version, frame.Width, frame.Height,
-            Order = frame.Nodes.Select(node => node.Id).ToArray(), Nodes = nodes, frame.FocusedId, frame.ModalId });
+        if (nodes.Count == 0 && texts.Count == 0 && canvases.Count == 0 && transforms.Count > 0 && _lastFrame != null &&
+            frame.Width == _lastFrame.Width && frame.Height == _lastFrame.Height &&
+            frame.FocusedId == _lastFrame.FocusedId && frame.ModalId == _lastFrame.ModalId &&
+            frame.Nodes.Select(node => node.Id).SequenceEqual(_lastFrame.Nodes.Select(node => node.Id)))
+            _surface!.InvokeVoid("renderTransforms", frame.Version, transforms);
+        else
+            _surface!.InvokeVoid("renderDelta", new { frame.Version, frame.Width, frame.Height,
+                Order = frame.Nodes.Select(node => node.Id).ToArray(), Nodes = nodes, Transforms = transforms,
+                Texts = texts, Canvases = canvases, frame.FocusedId, frame.ModalId });
         _lastFrame = frame;
     }
 
@@ -161,6 +189,9 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
     }
 
     public sealed record ImageInfo(string Source, float Width, float Height);
+    private sealed record TransformUpdate(string Id, UiMatrix Transform);
+    private sealed record TextUpdate(string Id, string? Content, UiTextLayout? TextLayout, float Width, float Height, UiMatrix Transform);
+    private sealed record CanvasUpdate(string Id, UiDrawing? Drawing, UiMatrix DrawingTransform, bool ReplaceDrawing);
 }
 
 public sealed record UiBrowserEvent(string Kind, float X = 0, float Y = 0, int PointerId = 0,

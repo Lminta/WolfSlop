@@ -81,6 +81,7 @@ public sealed partial class WebGpuRenderer
         _textures = null;
         _uploadedMap = null;
         _browserSprites?.ReleaseScene();
+        _browserSprites?.ClearSubmission();
     }
 
     private void UpdateSprites()
@@ -132,6 +133,7 @@ public sealed partial class WebGpuRenderer
                 ]
             });
             _frameSubmission!.JSRef!.CallVoid("setScene", _renderBindGroup!, _spriteBindGroup);
+            _browserSprites!.SetSubmission(_frameSubmission, _spriteBuffer, _mapInfoBuffer!, _spriteCapacity);
         }
 
         _browserSprites!.Upload(_spriteBuffer!, _mapInfoBuffer!);

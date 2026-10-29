@@ -6,6 +6,7 @@ let source, sourceCount, radiusKeys, radiusValues, minX, minY, maxX, maxY, maxim
 let gpuRecords, atlasViews, atlasFrames, gpuKeys, gpuPacked, gpuFloats, gpuActors;
 let gpuCount = 0, uploadedCount = -1, uploadedMapInfo;
 let cameraQueue, cameraBuffer, actorRecords = new Uint32Array(12);
+let submission, spriteBuffer, infoBuffer, spriteCapacity = 0;
 let actorByteView = new Uint8Array(actorRecords.buffer);
 const noWidths = new Uint32Array(), countUpload = new Uint32Array(1);
 const cameraUpload = new Uint8Array(64);
@@ -167,12 +168,23 @@ function selectFrame(cameraBytes, actorBytes, cx, cy, range, dirX, dirY, planeSc
     // as Uint8Array. Keep the WebGPU BufferSource stable in either case.
     cameraUpload.set(cameraBytes);
     cameraQueue.writeBuffer(cameraBuffer, 0, cameraUpload);
-    if (actorRecords.byteLength < actorBytes.byteLength) {
-        actorRecords = new Uint32Array(actorBytes.byteLength / 4);
+    const actorByteLength = actorBytes.byteLength ?? actorBytes.length;
+    if (actorRecords.byteLength < actorByteLength) {
+        actorRecords = new Uint32Array(actorByteLength / 4);
         actorByteView = new Uint8Array(actorRecords.buffer);
     }
     actorByteView.set(actorBytes);
     return selectGpu(cx, cy, range, dirX, dirY, planeScale, cullView, elapsedSeconds, actorRecords, actorCount);
+}
+
+function renderFrame(cameraBytes, actorBytes, cx, cy, range, dirX, dirY, planeScale, cullView, elapsedSeconds, actorCount, step, workgroups) {
+    const count = selectFrame(cameraBytes, actorBytes, cx, cy, range, dirX, dirY, planeScale, cullView, elapsedSeconds, actorCount);
+    // The managed owner grows GPU buffers and bindings. Leave this selection
+    // ready for its fallback upload instead of submitting an undersized buffer.
+    if (!submission || count > spriteCapacity) return ~count;
+    uploadGpu(cameraQueue, spriteBuffer, infoBuffer);
+    submission.render(step, workgroups, count);
+    return count;
 }
 
 function uploadGpu(queue, buffer, mapInfo) {
@@ -250,7 +262,9 @@ function sort(keys, count) {
     intro(0, count, 2 * (Math.floor(Math.log2(Math.max(1, count))) + 1));
 }
 
-return { prepare, release, select, sort, prepareGpu, selectGpu, uploadGpu, selectFrame,
+return { prepare, release, select, sort, prepareGpu, selectGpu, uploadGpu, selectFrame, renderFrame,
+    setSubmission(value, buffer, info, capacity) { submission = value; spriteBuffer = buffer; infoBuffer = info; spriteCapacity = capacity; },
+    clearSubmission() { submission = spriteBuffer = infoBuffer = null; spriteCapacity = 0; },
     uploadFrame(buffer, mapInfo) { uploadGpu(cameraQueue, buffer, mapInfo); },
     setCamera(queue, buffer) { cameraQueue = queue; cameraBuffer = buffer; }, getCandidateCount: () => candidateCount };
 }

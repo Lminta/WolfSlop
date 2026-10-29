@@ -13,17 +13,39 @@ public sealed class BrowserAudioBackend : IAudioBackend
     private readonly GainNode _output;
     private readonly AudioParam _volume;
     private readonly List<BrowserAudioStream> _streams = [];
+    private readonly JSObject? _stateReader;
+    private int _nextStreamId;
     private bool _disposed;
 
-    public BrowserAudioBackend(HTMLCanvasElement canvas)
+    public BrowserAudioBackend(HTMLCanvasElement canvas) : this(canvas, null) { }
+
+    private BrowserAudioBackend(HTMLCanvasElement canvas, JSObject? stateReader)
     {
         _canvas = canvas;
+        _stateReader = stateReader;
         _output = _context.CreateGain();
         _volume = _output.Gain;
         _volume.Value = 0;
         using var destination = _context.Destination;
         _output.Connect(destination).Dispose();
         _canvas.OnClick += OnClick;
+    }
+
+    public static async Task<BrowserAudioBackend> CreateAsync(HTMLCanvasElement canvas, BlazorJSRuntime js)
+    {
+        using var module = await js.Import<JSObject>("./_content/WolfNET.Engine.Browser/audio-state.js");
+        return new(canvas, module.JSRef!.Call<JSObject>("createStateReader"));
+    }
+
+    public void Refresh()
+    {
+        if (_stateReader == null) return;
+        var states = _stateReader.JSRef!.Call<double[]>("read");
+        for (var offset = 0; offset < states.Length; offset += 5)
+            foreach (var stream in _streams)
+                if (stream.Id == (int)states[offset])
+                    stream.Sample = new(states[offset + 1], states[offset + 2] < 0 ? double.NaN : states[offset + 2],
+                        states[offset + 3] != 0, states[offset + 4] != 0, false, false);
     }
 
     public IAudioStream OpenStream(string path)
@@ -59,6 +81,7 @@ public sealed class BrowserAudioBackend : IAudioBackend
         _disposed = true;
         _canvas.OnClick -= OnClick;
         foreach (var stream in _streams.ToArray()) stream.Dispose();
+        _stateReader?.Dispose();
         _volume.Dispose();
         _output.Disconnect();
         _output.Dispose();
@@ -83,11 +106,15 @@ public sealed class BrowserAudioBackend : IAudioBackend
         private float _requestedVolume = float.NaN;
         private double _requestedRamp = double.NaN;
         private bool _desiredPlaying, _starting, _blocked, _failed, _disposed;
+        public int Id { get; }
+        public AudioStreamState Sample { get; set; } = new(0, double.NaN, true, false, false, false);
 
         public BrowserAudioStream(BrowserAudioBackend owner, string path)
         {
             _owner = owner;
+            Id = owner._nextStreamId++;
             _audio = new HTMLAudioElement("");
+            owner._stateReader?.JSRef!.CallVoid("add", Id, _audio);
             _audio.SetAttribute("preload", "auto");
             _source = owner._context.CreateMediaElementSource(_audio);
             _gainNode = owner._context.CreateGain();
@@ -99,8 +126,9 @@ public sealed class BrowserAudioBackend : IAudioBackend
             _audio.Src = path;
         }
 
-        public AudioStreamState State => new(_audio.CurrentTime, _audio.Duration ?? double.NaN,
-            _audio.Paused, _audio.Ended, _starting, _failed);
+        public AudioStreamState State => _owner._stateReader != null
+            ? Sample with { Starting = _starting, Failed = _failed }
+            : new(_audio.CurrentTime, _audio.Duration ?? double.NaN, _audio.Paused, _audio.Ended, _starting, _failed);
 
         private void OnError(Event e)
         {
@@ -175,6 +203,7 @@ public sealed class BrowserAudioBackend : IAudioBackend
         {
             if (_disposed) return;
             _disposed = true;
+            _owner._stateReader?.JSRef!.CallVoid("remove", Id);
             _audio.OnError -= OnError;
             _audio.Pause();
             _audio.RemoveAttribute("src");

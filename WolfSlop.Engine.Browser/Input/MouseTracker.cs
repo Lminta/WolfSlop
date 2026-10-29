@@ -10,6 +10,7 @@ public sealed class MouseTracker : IMouseInput, IDisposable
 {
     private readonly HTMLCanvasElement _canvas;
     private readonly Document _document;
+    private readonly Func<bool>? _captureCheck;
     private Vector2 _movement;
     private bool _disposed;
     private bool _wasLocked;
@@ -44,13 +45,15 @@ public sealed class MouseTracker : IMouseInput, IDisposable
 
     private bool HasPointerLock()
     {
+        if (_captureCheck != null) return _captureCheck();
         using var lockedElement = _document.PointerLockElement;
         return lockedElement != null && lockedElement.IsSameNode(_canvas);
     }
 
-    public MouseTracker(HTMLCanvasElement canvas, BlazorJSRuntime js)
+    public MouseTracker(HTMLCanvasElement canvas, BlazorJSRuntime js, Func<bool>? captureCheck = null)
     {
         _canvas = canvas;
+        _captureCheck = captureCheck;
         _document = js.Get<Document>("document");
         _canvas.OnClick += OnCanvasClick;
         _document.OnMouseMove += OnMouseMove;

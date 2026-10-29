@@ -46,6 +46,16 @@ The provider retains prepared sprite records and atlas widths/geometry in JavaSc
 resolves scenery views only in nearby spatial buckets, and uploads sorted GPU records
 without reading them back through C#. Camera/actor inputs travel together. UI viewport
 sizes follow resize notifications; wheel rotations and map drawings reuse layout.
+Transform, text, and drawing changes use compact UI deltas. Glyph bitmaps are cached
+until their layout, appearance, font metrics, or output scale changes; moving a
+decorative image does not rebuild the accessibility tree. Music clocks are sampled
+together and sound-effect parameters cross WASM as one byte batch. Hosts can use
+`BrowserAudioBackend.CreateAsync` and `BrowserInput.CreateAsync` to enable batched
+music state reads and a single browser call for pointer-capture checks.
+World-only frames select sprites, upload camera/actor data and submit WebGPU commands
+in one WASM call. Buffer growth returns the prepared selection to the managed owner
+before upload; resizing and filtering changes clear cached submission bindings.
+Frames with screen overlays continue through the screen-layer encoder.
 
 The host creates the canvas, initializes the provider and owns its lifetime.
 Dispose input subscriptions, frame loops, UI hosts, renderers and audio owners

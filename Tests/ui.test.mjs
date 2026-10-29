@@ -32,6 +32,37 @@ test('browser and managed UI share inverse transforms, clips, draw order and mod
     frame.nodes[0].enabled = false;
     assert.equal(hitTest(frame, 10, 10), null);
 });
+
+test('transform deltas preserve text, images, clipping and immutable frame snapshots', () => {
+    const before = node('wheel', {kind:'image', source:'wheel.png', clips:[{rect:{x:0,y:0,width:50,height:50},transform:identity}]});
+    const previous = {nodes:[before]};
+    const transform = {...identity, e:25};
+    const after = mergeUiFrame(previous, {order:['wheel'], nodes:[], transforms:[{id:'wheel',transform}]}).nodes[0];
+    assert.equal(before.transform, identity);
+    assert.equal(after.transform, transform);
+    assert.equal(after.source, before.source);
+    assert.equal(after.clips, before.clips);
+    assert.equal(hitTest({nodes:[after]}, 30, 20).id, 'wheel');
+    assert.equal(hitTest({nodes:[after]}, 60, 20), null, 'Moving an image moved its inherited clip');
+});
+
+test('text and drawing deltas preserve styling, replace geometry and explicitly clear drawings', () => {
+    const originalDrawing = {revision:1,shapes:[]}, newDrawing = {revision:2,shapes:[]};
+    const previous = {nodes:[node('timer',{kind:'text',font:{size:22},content:'0:00.00',color:'#fff'}),
+        node('map',{kind:'canvas',drawing:originalDrawing})]};
+    const update = {order:['timer','map'],nodes:[],texts:[{id:'timer',content:'0:01.00',textLayout:{lines:[]},width:120}],
+        canvases:[{id:'map',drawing:null,replaceDrawing:false,drawingTransform:{...identity,e:5}}]};
+    const changed = mergeUiFrame(previous, update);
+    assert.equal(changed.nodes[0].content,'0:01.00');
+    assert.equal(changed.nodes[0].color,'#fff');
+    assert.equal(changed.nodes[0].font,previous.nodes[0].font);
+    assert.equal(changed.nodes[1].drawing,originalDrawing);
+    assert.equal(changed.nodes[1].drawingTransform.e,5);
+    const replace = drawing => mergeUiFrame(changed,{order:update.order,nodes:[],canvases:[{id:'map',drawing,replaceDrawing:true,drawingTransform:identity}]});
+    assert.equal(replace(newDrawing).nodes[1].drawing,newDrawing);
+    assert.equal(replace(null).nodes[1].drawing,null);
+    assert.equal(previous.nodes[0].content,'0:00.00');
+});
 function context() {
     const calls = [];
     return new Proxy({calls, globalAlpha: 1}, {get(target, name) {
@@ -65,4 +96,14 @@ test('missing images, outlined text and custom vector drawing use the same backe
     assert(ctx.calls.some(call => call[0] === 'strokeText' && call[1] === 'Hello'));
     drawShapes(ctx, {shapes: [{kind: 'polyline', points: [0, 0, 10, 20], stroke: '#fff', lineWidth: 2}]});
     assert(ctx.calls.some(call => call[0] === 'lineTo' && call[1] === 10 && call[2] === 20));
+});
+
+test('cached glyphs retain overhang, opacity and clipping without drawing the text again', () => {
+    const ctx = context(), surface = {canvas:{},margin:24,width:148,height:88};
+    drawNode(ctx,node('text',{textLayout:{},font:{size:20},opacity:.4,
+        clips:[{rect:{x:0,y:0,width:60,height:40},transform:identity}]}),null,null,surface);
+    assert.deepEqual(ctx.calls.find(call=>call[0]==='drawImage').slice(1),[surface.canvas,-24,-24,148,88]);
+    assert(ctx.calls.some(call=>call[0]==='clip'));
+    assert(!ctx.calls.some(call=>call[0]==='strokeText'||call[0]==='fillText'));
+    assert.equal(ctx.globalAlpha,.4);
 });

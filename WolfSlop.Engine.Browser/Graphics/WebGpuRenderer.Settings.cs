@@ -42,6 +42,7 @@ public sealed partial class WebGpuRenderer
             CreateWorldBindings();
             // Rebuild sprite/minimap bindings before the next submission, retaining scene textures.
             _spriteCapacity = 0;
+            _browserSprites!.ClearSubmission();
         }
     }
 

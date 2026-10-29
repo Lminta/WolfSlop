@@ -105,6 +105,7 @@ public sealed class MusicPlayer : IDisposable
         if (_disposed) return;
         // Each failed queue entry is excluded for this session, so even an
         // entirely unavailable playlist terminates without an endless retry.
+        _backend.Refresh();
         AudioStreamState current = default, next = default;
         while (_current != null)
         {

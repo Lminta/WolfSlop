@@ -44,7 +44,8 @@ internal sealed class BrowserSpriteSelection : IDisposable
     }
 
     public int Select(IReadOnlyList<Sprite> sprites, Vector2 position, Vector2 direction,
-        Vector2 plane, float range, bool cullView, double elapsedSeconds, IReadOnlyList<Sprite> dynamicSprites, byte[] cameraBytes)
+        Vector2 plane, float range, bool cullView, double elapsedSeconds, IReadOnlyList<Sprite> dynamicSprites, byte[] cameraBytes,
+        int columnStep = 0, uint workgroups = 0)
     {
         Synchronize(sprites);
         var needed = Math.Max(1, dynamicSprites.Count) * 48;
@@ -65,9 +66,15 @@ internal sealed class BrowserSpriteSelection : IDisposable
             floats[offset + 6] = sprite.Elevation; words[offset + 7] = sprite.ViewKind(frame);
             floats[offset + 8] = sprite.MaximumViewWidth;
         }
-        return _module.JSRef!.CallApply<int>("selectFrame", new object[] { cameraBytes, _dynamicBytes, position.X, position.Y, range,
-            direction.X, direction.Y, plane.Length(), cullView, elapsedSeconds, dynamicSprites.Count });
+        // A complemented count requests buffer growth before the owner uploads
+        // and submits this already prepared frame.
+        return _module.JSRef!.CallApply<int>(columnStep == 0 ? "selectFrame" : "renderFrame",
+            new object[] { cameraBytes, _dynamicBytes, position.X, position.Y, range,
+                direction.X, direction.Y, plane.Length(), cullView, elapsedSeconds, dynamicSprites.Count, columnStep, workgroups });
     }
+
+    public void SetSubmission(JSObject submission, GPUBuffer buffer, GPUBuffer mapInfo, int capacity) =>
+        _module.JSRef!.CallVoid("setSubmission", submission, buffer, mapInfo, capacity);
 
     public void Upload(GPUBuffer sprites, GPUBuffer mapInfo) =>
         _module.JSRef!.CallVoid("uploadFrame", sprites, mapInfo);
@@ -80,6 +87,8 @@ internal sealed class BrowserSpriteSelection : IDisposable
         _dynamicBytes = [];
         _source = null;
     }
+
+    public void ClearSubmission() => _module.JSRef!.CallVoid("clearSubmission");
 
     public void Dispose() { ReleaseScene(); _module.Dispose(); }
 }

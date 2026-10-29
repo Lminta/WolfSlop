@@ -2,11 +2,20 @@
 // and one audio-clock read, preserving the existing 25 ms parameter smoothing.
 export function createMixer(context) {
     const voices = [];
+    let bytes = new Uint8Array(0), values;
     return {
         add(id, gain, pan, pitch) {
             voices[id] = {parameters: [gain, pan, pitch], previous: [NaN, NaN, NaN]};
         },
         remove(id) { voices[id] = null; },
+        applyBytes(updates, count) {
+            if (bytes.length < updates.length) {
+                bytes = new Uint8Array(updates.length);
+                values = new Float32Array(bytes.buffer);
+            }
+            bytes.set(updates);
+            this.apply(values, count);
+        },
         apply(updates, count) {
             const now = context.currentTime;
             for (let i = 0; i < count; i++) {

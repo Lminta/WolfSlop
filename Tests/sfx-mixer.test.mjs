@@ -39,3 +39,20 @@ test('removed and reused voice slots and separate scenes retain independent stat
     second.apply(packet, 1);
     assert.equal(calls.length, 6, 'Another scene retained released audio parameters');
 });
+
+test('byte batches preserve float values, active length, buffer growth and array interop', () => {
+    const mixer = createMixer({currentTime: 4}), calls = [];
+    const parameter = {setTargetAtTime: (...args) => calls.push(args)};
+    mixer.add(2, parameter, parameter, parameter);
+    const packet = new Float32Array([2, 1.5, -.75, 2.25, 2, 99, 99, 99]);
+    const bytes = new Uint8Array(packet.buffer);
+    mixer.applyBytes(bytes, 1);
+    assert.deepEqual(calls.map(call => call[0]), [1.5, -.75, 2.25]);
+    mixer.applyBytes(Array.from(bytes), 1);
+    assert.equal(calls.length, 3, 'Unchanged array-marshalled values were rescheduled');
+    const bigger = new Float32Array(128); bigger.set([2, .5, .25, 1]);
+    mixer.applyBytes(new Uint8Array(bigger.buffer), 1);
+    assert.deepEqual(calls.slice(3).map(call => call[0]), [.5, .25, 1]);
+    mixer.applyBytes(bytes.subarray(0, 16), 1);
+    assert.deepEqual(calls.slice(6).map(call => call[0]), [1.5, -.75, 2.25]);
+});

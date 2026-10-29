@@ -43,7 +43,7 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
     private bool _profiling;
     private long _profileSampleStart;
     private int _profileFrames;
-    private double _selectionMilliseconds, _uploadMilliseconds, _submissionMilliseconds;
+    private double _selectionMilliseconds, _uploadMilliseconds, _submissionMilliseconds, _batchedMilliseconds;
     private long _profileCandidates, _profileSprites;
     private readonly Stopwatch _sceneAnimationClock = new();
 
@@ -100,21 +100,25 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         var (columnStep, columnPhase) = PrepareColumnFrame();
         UpdateCamera(position, direction, plane, pitch, elevation, columnStep, columnPhase);
         UpdateOverlays(frame.Overlays);
+        uint columns = ((uint)_settings.Width + (uint)columnStep - 1 - (uint)columnPhase) / (uint)columnStep;
+        uint workgroups = (columns + WorkgroupSize - 1) / WorkgroupSize;
+        var direct = frame.Overlays.Count == 0 && !frame.ShowMinimap;
         var selectionStart = _profiling ? Stopwatch.GetTimestamp() : 0;
-        _spriteCount = _browserSprites!.Select(map.Sprites, position, direction, plane, _settings.RenderDistance,
-            frame.CullSpritesOutsideView, _sceneAnimationClock.Elapsed.TotalSeconds, frame.DynamicSprites, _cameraBytes);
+        var selected = _browserSprites!.Select(map.Sprites, position, direction, plane, _settings.RenderDistance,
+            frame.CullSpritesOutsideView, _sceneAnimationClock.Elapsed.TotalSeconds, frame.DynamicSprites, _cameraBytes,
+            direct ? columnStep : 0, workgroups);
+        var submitted = direct && selected >= 0;
+        _spriteCount = selected >= 0 ? selected : ~selected;
         var uploadStart = _profiling ? Stopwatch.GetTimestamp() : 0;
-        UpdateSprites();
+        if (!submitted) UpdateSprites();
         var submissionStart = _profiling ? Stopwatch.GetTimestamp() : 0;
 
         // Encode the GPU frame in one browser call. Per-command WASM interop
         // otherwise costs more CPU time than the skipped rays save on the GPU.
-        uint columns = ((uint)_settings.Width + (uint)columnStep - 1 - (uint)columnPhase) / (uint)columnStep;
-        uint workgroups = (columns + WorkgroupSize - 1) / WorkgroupSize;
         var submission = _frameSubmission!.JSRef!;
-        if (frame.Overlays.Count == 0 && !frame.ShowMinimap)
+        if (!submitted && direct)
             submission.CallVoid("render", columnStep, workgroups, _spriteCount);
-        else
+        else if (!submitted)
         {
             using var pass = submission.Call<GPURenderPassEncoder>("begin", columnStep, workgroups, _spriteCount);
             DrawScreenLayers(pass, frame);
@@ -123,7 +127,7 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         }
         _columnFrameValid = true;
         if (columnStep > 1) _columnPhase = (_columnPhase + 1) % _columnFactor;
-        if (_profiling) ReportProfile(selectionStart, uploadStart, submissionStart);
+        if (_profiling) ReportProfile(selectionStart, uploadStart, submissionStart, submitted);
 
         _frameCount++;
 
@@ -135,9 +139,10 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         }
     }
 
-    private void ReportProfile(long selectionStart, long uploadStart, long submissionStart)
+    private void ReportProfile(long selectionStart, long uploadStart, long submissionStart, bool batched)
     {
-        _selectionMilliseconds += Stopwatch.GetElapsedTime(selectionStart, uploadStart).TotalMilliseconds;
+        if (batched) _batchedMilliseconds += Stopwatch.GetElapsedTime(selectionStart, uploadStart).TotalMilliseconds;
+        else _selectionMilliseconds += Stopwatch.GetElapsedTime(selectionStart, uploadStart).TotalMilliseconds;
         _uploadMilliseconds += Stopwatch.GetElapsedTime(uploadStart, submissionStart).TotalMilliseconds;
         _submissionMilliseconds += Stopwatch.GetElapsedTime(submissionStart).TotalMilliseconds;
         _profileCandidates += _browserSprites!.CandidatesExamined;
@@ -151,13 +156,14 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
             sprites = _profileSprites / (double)_profileFrames,
             uploadBytes = _profileSprites * SpriteSize / (double)_profileFrames,
             selectionMs = _selectionMilliseconds / _profileFrames,
+            selectionAndSubmitMs = _batchedMilliseconds / _profileFrames,
             uploadMs = _uploadMilliseconds / _profileFrames,
             // CPU command encoding/submission time; this does not wait for GPU completion.
             submissionMs = _submissionMilliseconds / _profileFrames
         }));
         _profileSampleStart = Stopwatch.GetTimestamp();
         _profileFrames = 0;
-        _selectionMilliseconds = _uploadMilliseconds = _submissionMilliseconds = 0;
+        _selectionMilliseconds = _uploadMilliseconds = _submissionMilliseconds = _batchedMilliseconds = 0;
         _profileCandidates = _profileSprites = 0;
     }
 

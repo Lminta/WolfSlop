@@ -22,7 +22,6 @@ public sealed class BrowserSfxBackend<TCue> : ISfxBackend<TCue> where TCue : not
     private readonly Stack<int> _freeVoiceIds = [];
     private int _nextVoiceId;
     private byte[] _mixBytes = new byte[32 * 4 * sizeof(float)];
-    private Float32Array _mixUpload;
     private bool _paused = true, _disposed;
 
     private BrowserSfxBackend(HTMLCanvasElement canvas, JSObject module, Func<TCue, int, int, int>? selectVariant,
@@ -38,7 +37,6 @@ public sealed class BrowserSfxBackend<TCue> : ISfxBackend<TCue> where TCue : not
         using var destination = _context.Destination;
         _output.Connect(destination).Dispose();
         _mixer = module.JSRef!.Call<JSObject>("createMixer", _context);
-        _mixUpload = new Float32Array(_mixBytes.Length / sizeof(float));
         _canvas.OnClick += OnClick;
     }
 
@@ -119,16 +117,13 @@ public sealed class BrowserSfxBackend<TCue> : ISfxBackend<TCue> where TCue : not
         if (_mixBytes.Length < _voices.Count * 4 * sizeof(float))
         {
             _mixBytes = new byte[_voices.Count * 8 * sizeof(float)];
-            _mixUpload.Dispose();
-            _mixUpload = new Float32Array(_mixBytes.Length / sizeof(float));
         }
         var values = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, float>(_mixBytes.AsSpan());
         var count = 0;
         foreach (var voice in _voices)
             if (voice.WriteMix(values.Slice(count * 4, 4))) count++;
         if (count == 0) return;
-        _mixUpload.WriteBytes(_mixBytes);
-        _mixer.JSRef!.CallVoid("apply", _mixUpload, count);
+        _mixer.JSRef!.CallVoid("applyBytes", _mixBytes, count);
     }
 
     public void SetPaused(bool paused)
@@ -156,7 +151,6 @@ public sealed class BrowserSfxBackend<TCue> : ISfxBackend<TCue> where TCue : not
         _disposed = true;
         _canvas.OnClick -= OnClick;
         foreach (var voice in _voices.ToArray()) voice.Dispose();
-        _mixUpload.Dispose();
         _mixer.Dispose();
         foreach (var buffer in _clips.Values.SelectMany(clips => clips).Distinct()) buffer.Dispose();
         _clips.Clear();

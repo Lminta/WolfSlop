@@ -6,6 +6,12 @@ export function mergeUiFrame(previous, update) {
     const nodes = new Map((previous?.nodes ?? []).map(node => [node.id, node]));
     for (const node of update.nodes) nodes.set(node.id,
         node.kind === 'canvas' && !node.drawing ? {...node, drawing: nodes.get(node.id)?.drawing ?? null} : node);
+    for (const node of update.transforms ?? []) nodes.set(node.id, {...nodes.get(node.id), transform: node.transform});
+    for (const node of update.texts ?? []) nodes.set(node.id, {...nodes.get(node.id), ...node});
+    for (const node of update.canvases ?? []) {
+        const previous = nodes.get(node.id);
+        nodes.set(node.id, {...previous, drawingTransform: node.drawingTransform, drawing: node.replaceDrawing ? node.drawing : previous.drawing});
+    }
     return {...update, nodes: update.order.map(id => nodes.get(id))};
 }
 export function inversePoint(matrix, x, y) {
@@ -92,7 +98,21 @@ export function drawShapes(context, drawing, transform = identity) {
     }
 }
 
-export function drawNode(context, node, image, vectorSurface) {
+function drawText(context, node) {
+    context.font = fontCss(node.font); context.fillStyle = node.color; context.textBaseline = 'top';
+    const innerWidth = node.width - node.padding.left - node.padding.right;
+    let y = node.kind === 'button' || node.kind === 'toggle' ? (node.height - node.textLayout.height) / 2 : node.padding.top;
+    for (const line of node.textLayout.lines) {
+        const x = node.padding.left + (node.textAlignment === 1 ? (innerWidth - line.width) / 2 : node.textAlignment === 2 ? innerWidth - line.width : 0);
+        if (node.textOutlineColor && node.textOutlineWidth > 0) {
+            context.strokeStyle = node.textOutlineColor; context.lineWidth = node.textOutlineWidth;
+            context.lineJoin = 'round'; context.strokeText(line.text, x, y);
+        }
+        context.fillText(line.text, x, y); y += node.textLayout.lineHeight;
+    }
+}
+
+export function drawNode(context, node, image, vectorSurface, textSurface) {
     if (node.opacity <= 0 || node.width <= 0 || node.height <= 0) return;
     context.save();
     for (const clip of node.clips) {
@@ -125,17 +145,8 @@ export function drawNode(context, node, image, vectorSurface) {
         if (node.kind === 'slider') {context.fillStyle = '#ffffff'; context.fillRect(Math.max(0, Math.min(node.width - 6, node.width * node.value - 3)), 0, 6, node.height);}
     }
     if (node.textLayout && node.font && !node.nativeEditing) {
-        context.font = fontCss(node.font); context.fillStyle = node.color; context.textBaseline = 'top';
-        const innerWidth = node.width - node.padding.left - node.padding.right;
-        let y = node.kind === 'button' || node.kind === 'toggle' ? (node.height - node.textLayout.height) / 2 : node.padding.top;
-        for (const line of node.textLayout.lines) {
-            const x = node.padding.left + (node.textAlignment === 1 ? (innerWidth - line.width) / 2 : node.textAlignment === 2 ? innerWidth - line.width : 0);
-            if (node.textOutlineColor && node.textOutlineWidth > 0) {
-                context.strokeStyle = node.textOutlineColor; context.lineWidth = node.textOutlineWidth;
-                context.lineJoin = 'round'; context.strokeText(line.text, x, y);
-            }
-            context.fillText(line.text, x, y); y += node.textLayout.lineHeight;
-        }
+        if (textSurface) context.drawImage(textSurface.canvas, -textSurface.margin, -textSurface.margin, textSurface.width, textSurface.height);
+        else drawText(context, node);
     }
     context.restore();
 }
@@ -154,7 +165,7 @@ export function createUi(world, callback) {
     parent.append(canvas, semantics, editors);
     const context = canvas.getContext('2d', {alpha: true});
     const measuring = document.createElement('canvas').getContext('2d');
-    const images = new Map(), vectors = new Map(), proxies = new Map(), subscriptions = [], fonts = new Set();
+    const images = new Map(), vectors = new Map(), texts = new Map(), proxies = new Map(), subscriptions = [], fonts = new Set();
     let disposed = false, generation = 0, frame = null, drawCount = 0, lastUiClick = false, hover = null, syncingFocus = false;
     const pointers = new Set();
     Object.defineProperty(canvas, 'uiStats', {get: () => ({imageCount: images.size, vectorCount: vectors.size, draws: drawCount})});
@@ -184,6 +195,26 @@ export function createUi(world, callback) {
         drawShapes(ctx, node.drawing, transform);
         cache = {canvas: surface, revision: node.drawing.revision, drawing: node.drawing, width, height, transform, box}; vectors.set(node.id, cache); return surface;
     }
+    function textSurface(node) {
+        if (!node.textLayout || !node.font || node.nativeEditing || node.width <= 0 || node.height <= 0) return null;
+        const scaleX = canvas.width / frame.width, scaleY = canvas.height / frame.height;
+        let cache = texts.get(node.id);
+        const old = cache?.node;
+        if (old && cache.scaleX === scaleX && cache.scaleY === scaleY && old.textLayout === node.textLayout &&
+            old.font === node.font && old.color === node.color && old.padding === node.padding &&
+            old.width === node.width && old.height === node.height && old.kind === node.kind &&
+            old.textAlignment === node.textAlignment && old.textOutlineColor === node.textOutlineColor &&
+            old.textOutlineWidth === node.textOutlineWidth) return cache;
+        // Leave room for italic glyph overhang and outlines outside the layout box.
+        const margin = Math.ceil(node.font.size + (node.textOutlineWidth || 0));
+        const width = node.width + margin * 2, height = node.height + margin * 2;
+        const surface = cache?.canvas ?? document.createElement('canvas');
+        surface.width = Math.max(1, Math.ceil(width * scaleX)); surface.height = Math.max(1, Math.ceil(height * scaleY));
+        const ctx = surface.getContext('2d');
+        ctx.scale(surface.width / width, surface.height / height); ctx.translate(margin, margin);
+        drawText(ctx, node);
+        cache = {canvas: surface, node, margin, width, height, scaleX, scaleY}; texts.set(node.id, cache); return cache;
+    }
     function paint() {
         if (disposed || !frame) return;
         const rect = world.getBoundingClientRect(), ratio = window.devicePixelRatio || 1;
@@ -196,7 +227,7 @@ export function createUi(world, callback) {
         context.scale(width / frame.width, height / frame.height);
         for (const node of frame.nodes) {
             const entry = node.source ? getImage(node.source) : null;
-            drawNode(context, node, entry?.ready ? entry.image : null, node.kind === 'canvas' ? vectorSurface(node) : null);
+            drawNode(context, node, entry?.ready ? entry.image : null, node.kind === 'canvas' ? vectorSurface(node) : null, textSurface(node));
         }
         Object.assign(semantics.style, {width: frame.width + 'px', height: frame.height + 'px', transform: `scale(${rect.width / frame.width},${rect.height / frame.height})`});
         Object.assign(editors.style, {width: frame.width + 'px', height: frame.height + 'px', transform: `scale(${rect.width / frame.width},${rect.height / frame.height})`});
@@ -317,7 +348,7 @@ export function createUi(world, callback) {
         generation++; frame = null; canvas.__uiFrame = null;
         for (const pointer of pointers) if (world.hasPointerCapture?.(pointer)) world.releasePointerCapture(pointer);
         for (const entry of images.values()) entry.image.removeAttribute('src');
-        images.clear(); vectors.clear(); proxies.clear(); semantics.replaceChildren(); editors.replaceChildren(); pointers.clear(); hover = null; lastUiClick = false;
+        images.clear(); vectors.clear(); texts.clear(); proxies.clear(); semantics.replaceChildren(); editors.replaceChildren(); pointers.clear(); hover = null; lastUiClick = false;
         context.setTransform(1, 0, 0, 1, 0, 0); context.clearRect(0, 0, canvas.width, canvas.height);
     }
     return {
@@ -331,16 +362,32 @@ export function createUi(world, callback) {
         },
         async prepare(sources) {return Promise.all(sources.map(async source => {const entry = await getImage(source).promise; return {source, width: entry.ready ? entry.image.naturalWidth : 0, height: entry.ready ? entry.image.naturalHeight : 0};}));},
         renderDelta(value) {
-            this.render(mergeUiFrame(frame, value));
+            const semanticsChanged = !frame || value.nodes.length > 0 || value.texts?.length > 0 ||
+                value.transforms?.some(node => proxies.has(node.id)) || frame.focusedId !== value.focusedId ||
+                frame.modalId !== value.modalId || frame.nodes.length !== value.order.length ||
+                frame.nodes.some((node, index) => node.id !== value.order[index]);
+            this.render(mergeUiFrame(frame, value), semanticsChanged);
         },
-        render(value) {
+        renderTransforms(version, transforms) {
+            if (disposed || !frame) return;
+            const changed = new Map(transforms.map(node => [node.id, node.transform]));
+            frame = {...frame, version, nodes: frame.nodes.map(node => changed.has(node.id) ? {...node, transform: changed.get(node.id)} : node)};
+            canvas.__uiFrame = frame;
+            // Decorative transforms cannot affect the accessibility tree. A
+            // transformed accessible node (or its ancestor) still updates it.
+            if (transforms.some(node => proxies.has(node.id))) syncSemantics();
+            paint();
+        },
+        render(value, semanticsChanged = true) {
             if (disposed) return;
-            for (const node of value.nodes) if (node.kind === 'canvas' && !node.drawing) node.drawing = vectors.get(node.id)?.drawing ?? null;
+            for (const node of value.nodes) if (node.kind === 'canvas' && !node.drawing) vectors.delete(node.id);
             for (const node of value.nodes) node.nativeEditing = node.kind === 'input' && value.focusedId === node.id && node.enabled;
             frame = value; canvas.__uiFrame = frame;
             const present = new Set(frame.nodes.map(node => node.id));
             for (const id of vectors.keys()) if (!present.has(id)) vectors.delete(id);
-            syncSemantics(); paint();
+            for (const id of texts.keys()) if (!present.has(id)) texts.delete(id);
+            if (semanticsChanged) syncSemantics();
+            paint();
         },
         reset,
         dispose() {
