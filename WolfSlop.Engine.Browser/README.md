@@ -34,6 +34,11 @@ after preparing a scene or changing modes is complete. Screen overlays and the
 minimap render after presentation every frame. Fast motion can show temporal trails;
 the actual FPS gain depends on the GPU, CPU workload, target FPS, and display refresh rate.
 
+Hosts can call `WebGpuRenderer.ApplySettings(settings, canvas)` between frames to
+resize ray buffers and replace filtering samplers without reloading scene textures.
+The host also updates the scene camera and calls `BrowserFrameLoop.SetTargetFPS`
+when changing the frame cap. Interlaced history is refreshed after settings change.
+
 The UI host sends changed display-list entries and preserves browser-side vector
 geometry between frames. View transforms and text updates reuse immutable drawings
 and cached text layouts; document changes and resize still refresh the full view.

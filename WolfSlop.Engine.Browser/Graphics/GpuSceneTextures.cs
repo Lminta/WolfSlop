@@ -172,18 +172,7 @@ internal sealed class GpuSceneTextures : IDisposable
                 Format = "rgba8unorm",
                 Usage = GPUTextureUsage.TextureBinding | GPUTextureUsage.CopyDst | GPUTextureUsage.RenderAttachment
             });
-            _textureSampler = _device.CreateSampler(new GPUSamplerDescriptor
-            {
-                Label = "WolfNET Wall and Sprite Filtering",
-                MagFilter = "linear", MinFilter = "linear", MipmapFilter = "linear", MaxAnisotropy = _settings.MaxAnisotropy,
-                AddressModeU = "clamp-to-edge", AddressModeV = "clamp-to-edge"
-            });
-            _surfaceSampler = _device.CreateSampler(new GPUSamplerDescriptor
-            {
-                Label = "WolfNET Repeating Surface Filtering",
-                MagFilter = "linear", MinFilter = "linear", MipmapFilter = "linear", MaxAnisotropy = _settings.MaxAnisotropy,
-                AddressModeU = "repeat", AddressModeV = "repeat"
-            });
+            UpdateFiltering();
             using var queue = _device.Queue;
             var pink = new byte[size * size * 4];
             for (int i = 0; i < pink.Length; i += 4) pink[i] = pink[i + 2] = pink[i + 3] = 255;
@@ -221,6 +210,24 @@ internal sealed class GpuSceneTextures : IDisposable
             foreach (var image in decoded.Values) image?.Dispose();
         }
     }
+    public void UpdateFiltering()
+    {
+        _textureSampler?.Dispose();
+        _surfaceSampler?.Dispose();
+        _textureSampler = _device.CreateSampler(new GPUSamplerDescriptor
+        {
+            Label = "WolfNET Wall and Sprite Filtering",
+            MagFilter = "linear", MinFilter = "linear", MipmapFilter = "linear", MaxAnisotropy = _settings.MaxAnisotropy,
+            AddressModeU = "clamp-to-edge", AddressModeV = "clamp-to-edge"
+        });
+        _surfaceSampler = _device.CreateSampler(new GPUSamplerDescriptor
+        {
+            Label = "WolfNET Repeating Surface Filtering",
+            MagFilter = "linear", MinFilter = "linear", MipmapFilter = "linear", MaxAnisotropy = _settings.MaxAnisotropy,
+            AddressModeU = "repeat", AddressModeV = "repeat"
+        });
+    }
+
     public void Dispose()
     {
         _wallTextureView?.Dispose();

@@ -9,7 +9,7 @@ namespace WolfNET.Engine.Browser.Core;
 public sealed class BrowserFrameLoop : IFrameLoop
 {
     private readonly Window _window;
-    private readonly FrameTiming _timing;
+    private FrameTiming _timing;
     private double _origin = double.NaN;
     private int _generation;
     private bool _disposed;
@@ -51,6 +51,12 @@ public sealed class BrowserFrameLoop : IFrameLoop
     {
         _origin = double.NaN;
         _timing.Reset();
+    }
+
+    public void SetTargetFPS(int targetFramesPerSecond)
+    {
+        _timing = new(targetFramesPerSecond);
+        ResetTiming();
     }
 
     public void Stop()

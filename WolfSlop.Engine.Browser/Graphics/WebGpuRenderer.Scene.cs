@@ -45,26 +45,7 @@ public sealed partial class WebGpuRenderer
             using var queue = _device.Queue;
             using (var data = new Uint32Array(materials))
                 queue.WriteBuffer(_materialsBuffer, 0, data);
-            using var layout = _renderPipeline!.GetBindGroupLayout(0);
-            _renderBindGroup = _device.CreateBindGroup(new GPUBindGroupDescriptor
-            {
-                Label = "WolfNET Render Bindings",
-                Layout = layout,
-                Entries =
-                [
-                    BufferEntry(0, _rayHitsBuffer!),
-                    BufferEntry(1, _cameraBuffer!),
-                    new GPUBindGroupEntry { Binding = 2, Resource = _textures!.WallView },
-                    BufferEntry(3, _worldMapBuffer!),
-                    BufferEntry(4, _mapInfoBuffer!),
-                    BufferEntry(6, _materialsBuffer),
-                    new GPUBindGroupEntry { Binding = 7, Resource = _textures!.TextureSampler },
-                    new GPUBindGroupEntry { Binding = 8, Resource = _textures!.SurfaceSampler },
-                    new GPUBindGroupEntry { Binding = 9, Resource = _textures!.SkyView },
-                    new GPUBindGroupEntry { Binding = 10, Resource = _textures!.SkySampler },
-                    BufferEntry(11, _textures!.SkyBuffer)
-                ]
-            });
+            CreateWorldBindings();
             _preparedTextures = map.Textures;
             _uploadedMap = null;
             UpdateMap(map, queue);

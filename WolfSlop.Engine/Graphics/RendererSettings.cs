@@ -2,25 +2,39 @@ namespace WolfNET.Engine.Graphics;
 
 public class RendererSettings(int width = 1920, int height = 1080, int targetFPS = 60)
 {
-    public int Width { get; } = width;
-    public int Height { get; } = height;
+    public int Width { get; private set; } = width;
+    public int Height { get; private set; } = height;
     public float CameraPlaneScale => MathF.Tan(FovDegrees * MathF.PI / 360f);
     public float AR => Width / (float)Height;
     
-    public int TargetFPS { get; } = targetFPS;
+    public int TargetFPS { get; private set; } = targetFPS;
     public float TargetFrameInterval => 1000.0f / TargetFPS;
 
-    public ushort MaxAnisotropy { get; init; } = 4;
+    public ushort MaxAnisotropy { get; set; } = 4;
     // 1 refreshes every column; 2 or 3 rotate through subsets of columns each frame.
     public int ColumnInterlaceFactor { get; set; } = 1;
     // Horizontal field of view. The default preserves the original 0.66 camera plane.
-    public float FovDegrees { get; init; } = 66.85f;
+    public float FovDegrees { get; set; } = 66.85f;
     // Horizontal world distances in map squares.
-    public float RenderDistance { get; init; } = 60;
-    public float FogStartDistance { get; init; } = 40;
+    public float RenderDistance { get; set; } = 60;
+    public float FogStartDistance { get; set; } = 40;
     
     public int MaxMapWidth { get; init; } = 512;
     public int MaxMapHeight { get; init; } = 512;
+
+    /// <summary>Applies validated display options while retaining allocated map capacities.</summary>
+    public void Apply(RendererSettings settings)
+    {
+        settings.Validate();
+        Width = settings.Width;
+        Height = settings.Height;
+        TargetFPS = settings.TargetFPS;
+        MaxAnisotropy = settings.MaxAnisotropy;
+        ColumnInterlaceFactor = settings.ColumnInterlaceFactor;
+        FovDegrees = settings.FovDegrees;
+        RenderDistance = settings.RenderDistance;
+        FogStartDistance = settings.FogStartDistance;
+    }
 
     public void Validate()
     {

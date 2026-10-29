@@ -3,13 +3,13 @@ import {test} from 'node:test';
 import {createSubmission} from '../WolfSlop.Engine.Browser/wwwroot/frame-submission.js';
 
 function fixture() {
-    const events = [];
+    const events = [], computeBindings = [];
     const canvas = {width: 259, height: 145, createView: () => 'canvas'};
     const device = {
         queue: {submit: () => events.push({type: 'submit'})},
         createCommandEncoder: () => ({
             beginComputePass: () => ({
-                setPipeline() {}, setBindGroup() {},
+                setPipeline() {}, setBindGroup(index, group) { computeBindings.push(group); },
                 dispatchWorkgroups: count => events.push({type: 'rays', count}), end() {}
             }),
             beginRenderPass: descriptor => {
@@ -25,7 +25,7 @@ function fixture() {
     };
     const submission = createSubmission(device, {getCurrentTexture: () => canvas}, {}, {}, {}, {}, {});
     submission.setScene({}, {});
-    return {submission, events, canvas};
+    return {submission, events, canvas, computeBindings};
 }
 
 test('full rendering submits one world pass without history or presentation work', () => {
@@ -35,6 +35,14 @@ test('full rendering submits one world pass without history or presentation work
     assert.equal(events[0].count, 5);
     assert.equal(events[1].view, 'canvas');
     assert.deepEqual(events[1].draws, [[3], [6, 12]]);
+});
+
+test('resizing replaces the compute bindings before the next frame', () => {
+    const {submission, computeBindings} = fixture();
+    const resized = {};
+    submission.setComputeGroup(resized);
+    submission.render(1, 13, 0);
+    assert.equal(computeBindings.at(-1), resized);
 });
 
 test('priming retains a full frame; subsequent frames shade the compact target', () => {

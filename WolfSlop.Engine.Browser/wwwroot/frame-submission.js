@@ -59,6 +59,7 @@ export function createSubmission(device, context, computePipeline, computeGroup,
     }
 
     return {
+        setComputeGroup(group) { computeGroup = group; },
         setScene(world, sprites) { worldGroup = world; spriteGroup = sprites; },
         setColumns(retained, strip, presentation) {
             history = retained; stripView = strip; presentGroup = presentation;
