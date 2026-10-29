@@ -22,8 +22,6 @@ public sealed partial class WebGpuRenderer
             _settings.MaxMapWidth *
             _settings.MaxMapHeight);
 
-        _cameraUpload = new Float32Array(16);
-        _spriteCountUpload = new Uint32Array(1);
 
 
         // Camera:
@@ -136,10 +134,9 @@ public sealed partial class WebGpuRenderer
         }
         using (var data = new Uint32Array(cells))
             queue.WriteBuffer(_worldMapBuffer!, 0, data);
-        using (var info = new Uint32Array(new uint[] { (uint)map.Width, (uint)map.Height, (uint)map.Sprites.Count, 0 }))
+        using (var info = new Uint32Array(new uint[] { (uint)map.Width, (uint)map.Height, (uint)_spriteCount, 0 }))
             queue.WriteBuffer(_mapInfoBuffer!, 0, info);
         _uploadedMap = map;
-        _uploadedSpriteCount = map.Sprites.Count;
         Console.WriteLine($"[GPU] Map updated: {map.Width}x{map.Height}, revision={map.Revision}, cells={map.Cells.Count}");
     }
     /// <summary>
@@ -150,7 +147,7 @@ public sealed partial class WebGpuRenderer
         Vector2 direction,
         Vector2 plane,
         float pitch,
-        float elevation, int columnStep, int columnPhase, GPUQueue queue)
+        float elevation, int columnStep, int columnPhase)
     {
         if (_device == null || _cameraBuffer == null)
         {
@@ -180,11 +177,6 @@ public sealed partial class WebGpuRenderer
         _cameraData[13] = columnPhase;
 
         Buffer.BlockCopy(_cameraData, 0, _cameraBytes, 0, CameraBufferSize);
-        _cameraUpload!.WriteBytes(_cameraBytes);
-        queue.WriteBuffer(
-            _cameraBuffer,
-            0,
-            _cameraUpload);
     }
 
 }

@@ -42,6 +42,10 @@ when changing the frame cap. Interlaced history is refreshed after settings chan
 The UI host sends changed display-list entries and preserves browser-side vector
 geometry between frames. View transforms and text updates reuse immutable drawings
 and cached text layouts; document changes and resize still refresh the full view.
+The provider retains prepared sprite records and atlas widths/geometry in JavaScript,
+resolves scenery views only in nearby spatial buckets, and uploads sorted GPU records
+without reading them back through C#. Camera/actor inputs travel together. UI viewport
+sizes follow resize notifications; wheel rotations and map drawings reuse layout.
 
 The host creates the canvas, initializes the provider and owns its lifetime.
 Dispose input subscriptions, frame loops, UI hosts, renderers and audio owners

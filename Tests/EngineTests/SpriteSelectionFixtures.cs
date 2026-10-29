@@ -46,6 +46,7 @@ internal static class SpriteSelectionFixtures
         Directory.CreateDirectory(directory);
         File.WriteAllText(Path.Combine(directory, "sprite-sort-oracle.json"), JsonSerializer.Serialize(orderingCases));
         File.WriteAllText(Path.Combine(directory, "sprite-spatial-oracle.json"), JsonSerializer.Serialize(new { positions, views }));
+        WriteGpuReference(directory);
         Console.WriteLine($"Generated independent sprite references: {orderingCases.Count} ordering cases, {views.Count} synthetic views.");
     }
 
@@ -63,5 +64,58 @@ internal static class SpriteSelectionFixtures
             throw new Exception("Selected scenery/actors must retain sort order and the exact 32-byte shader layout.");
         selector.Clear();
         if (selector.Visible.Length != 0) throw new Exception("Scene release retained visible sprites.");
+    }
+
+    private static void WriteGpuReference(string directory)
+    {
+        var directional = new SpriteAtlas { Directions = 8,
+            Frames = Enumerable.Range(0, 8).Select(i => new AtlasFrame { X = i * 16, Y = 0, Width = 8 + i, Height = 12 }).ToArray() };
+        var animated = new SpriteAtlas { Frames = [new() { X = 0, Y = 0, Width = 10, Height = 10 },
+            new() { X = 10, Y = 0, Width = 30, Height = 10 }, new() { X = 40, Y = 0, Width = 10, Height = 20 }] };
+        var sprites = Enumerable.Range(0, 81).Select(i => new Sprite(new((i % 9 - 4) * 9, (i / 9 - 4) * 9), (uint)(10 + i * 8), (uint)i + 1)
+        {
+            Scale = new(1 + i % 3, 1.5f), Elevation = (i % 5 - 2) * .1f,
+            Atlas = i % 3 == 0 ? directional : i % 3 == 1 ? animated : null,
+            Animation = i % 3 == 1 ? new SpriteAnimation { FramesPerSecond = 4, PhaseSeconds = i * .137f } : null,
+            RotationDegrees = i * 17 - 270, FacingCamera = i % 2 == 0,
+            Footprint = i % 6 == 0 ? new SpriteFootprint { Width = 1, Length = 3 } : null,
+            Kind = i % 5 == 0 ? SpriteKind.PlaneNormalX : SpriteKind.Billboard,
+            SwapRedBlue = i % 4 == 0, SwapRedGreen = i % 7 == 0
+        }).ToArray();
+        var (records, atlases) = WolfNET.Engine.Browser.Graphics.SpriteSelection.PrepareGpuScene(sprites);
+        var positions = sprites.SelectMany((sprite, i) => new[] { sprite.Position.X, sprite.Position.Y, records[i].Scale.X, sprite.MaximumViewWidth }).ToArray();
+        var views = new List<object>();
+        var reference = new ReferenceSpriteSelection();
+        for (var i = 0; i < 48; i++)
+        {
+            var observer = new Vector2((i % 5 - 2) * 2, (i % 7 - 3) * 2);
+            var angle = i * .51f;
+            var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+            var plane = new Vector2(direction.Y, -direction.X) * .57735026f;
+            var time = i * .2499;
+            Sprite[] actors = [new(new(3 + i * .1f, 2), 900, 0) { Atlas = directional, FacingCamera = false,
+                Footprint = new() { Width = 1, Length = 2 }, SwapRedBlue = true },
+                new(new(-2, 1 + i * .1f), 950, 0) { Atlas = animated, Animation = new() { FramesPerSecond = 4 }, SwapRedGreen = true }];
+            var actorWords = new uint[actors.Length * 12];
+            for (var actor = 0; actor < actors.Length; actor++)
+            {
+                var sprite = actors[actor]; var frame = sprite.ViewFrame(observer, time);
+                WolfNET.Engine.Browser.Graphics.SpriteSelection.VisibleSprite[] record = [new(sprite.Position,
+                    sprite.TextureLayer + (uint)frame, sprite.OwnerCell, new(sprite.ViewWidth(frame), sprite.Scale.Y), sprite.Elevation, sprite.ViewKind(frame))];
+                MemoryMarshal.Cast<WolfNET.Engine.Browser.Graphics.SpriteSelection.VisibleSprite, uint>(record.AsSpan()).CopyTo(actorWords.AsSpan(actor * 12));
+                actorWords[actor * 12 + 8] = BitConverter.SingleToUInt32Bits(sprite.MaximumViewWidth);
+            }
+            reference.Select(sprites.Concat(actors).ToArray(), observer, direction, plane, 40, i % 2 == 0, time);
+            var expected = reference.Visible.Select(view => new WolfNET.Engine.Browser.Graphics.SpriteSelection.VisibleSprite(
+                view.Sprite.Position, view.Layer, view.Sprite.OwnerCell, view.Scale, view.Sprite.Elevation, view.Kind)).ToArray();
+            views.Add(new { x = observer.X, y = observer.Y, dx = direction.X, dy = direction.Y,
+                plane = plane.Length(), time, cull = i % 2 == 0, actors = actorWords,
+                expected = MemoryMarshal.Cast<WolfNET.Engine.Browser.Graphics.SpriteSelection.VisibleSprite, uint>(expected.AsSpan()).ToArray() });
+        }
+        File.WriteAllText(Path.Combine(directory, "sprite-upload-oracle.json"), JsonSerializer.Serialize(new
+        {
+            positions, records = MemoryMarshal.Cast<WolfNET.Engine.Browser.Graphics.SpriteSelection.VisibleSprite, uint>(records.AsSpan()).ToArray(),
+            atlases, views
+        }, JsonSerializerOptions.Web));
     }
 }

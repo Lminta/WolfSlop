@@ -25,6 +25,18 @@ public class UiElement
     public string? Role { get => _role; set => Set(ref _role, value); }
     public string? ClassName { get => _className; set => Set(ref _className, value); }
     public UiStyle Style { get => _style; set => Set(ref _style, value ?? throw new ArgumentNullException(nameof(value))); }
+    /// <summary>Updates the visual rotation without repeating measurement and arrangement.</summary>
+    public float Rotation
+    {
+        get => _style.Rotation;
+        set
+        {
+            if (!float.IsFinite(value)) throw new ArgumentOutOfRangeException(nameof(value));
+            if (_style.Rotation == value) return;
+            _style = _style with { Rotation = value };
+            Document?.InvalidateVisual();
+        }
+    }
     public bool IsFocused => ReferenceEquals(Document?.Input.Focused, this);
     public bool IsHovered => ReferenceEquals(Document?.Input.Hovered, this);
     public bool IsPressed => ReferenceEquals(Document?.Input.Pressed, this);
@@ -47,6 +59,11 @@ public class UiElement
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return;
         field = value; Invalidate();
+    }
+    protected void SetVisual<T>(ref T field, T value)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return;
+        field = value; Document?.InvalidateVisual();
     }
     public void Invalidate() => Document?.Invalidate();
     public T Add<T>(T child) where T : UiElement { Children.Add(child); return child; }

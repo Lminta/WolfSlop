@@ -3,8 +3,15 @@ export function createSelector() {
 // Each key is [source index: u32, squared distance: f32]. All distances are finite.
 const views = new WeakMap();
 let source, sourceCount, radiusKeys, radiusValues, minX, minY, maxX, maxY, maximumRadius, candidateCount;
+let gpuRecords, atlasViews, atlasFrames, gpuKeys, gpuPacked, gpuFloats, gpuActors;
+let gpuCount = 0, uploadedCount = -1, uploadedMapInfo;
+let cameraQueue, cameraBuffer, actorRecords = new Uint32Array(12);
+let actorByteView = new Uint8Array(actorRecords.buffer);
+const noWidths = new Uint32Array(), countUpload = new Uint32Array(1);
+const cameraUpload = new Uint8Array(64);
 const grid = new Map(), nearby = [];
 function prepare(positions, count) {
+    atlasViews = atlasFrames = null;
     source = positions; sourceCount = count;
     radiusKeys = new Uint32Array((count + 3) * 2); radiusValues = new Float32Array(radiusKeys.buffer);
     grid.clear(); maximumRadius = 0;
@@ -22,9 +29,31 @@ function prepare(positions, count) {
 function release() {
     source = radiusKeys = radiusValues = null;
     sourceCount = 0; grid.clear(); nearby.length = 0;
+    gpuRecords = atlasViews = atlasFrames = gpuKeys = gpuPacked = gpuFloats = gpuActors = null;
+    gpuCount = 0; uploadedCount = -1; uploadedMapInfo = null;
 }
 
-function collect(widths, widthCount, cx, cy, range, actors, actorCount) {
+function resolveAtlas(index, cx, cy, elapsedSeconds) {
+    const view = atlasViews?.[index];
+    if (!view) return;
+    const f32 = Math.fround;
+    let frame = 0;
+    if (view.animationRate > 0) {
+        const cycle = view.frames / view.animationRate;
+        frame = Math.min(view.frames - 1, Math.trunc(((elapsedSeconds % cycle + view.phaseSeconds % cycle) % cycle) * view.animationRate));
+    } else if (view.directions > 1) {
+        const dx = f32(cx - source[index * 4]), dy = f32(cy - source[index * 4 + 1]);
+        if (f32(f32(dx * dx) + f32(dy * dy)) >= f32(1e-8)) {
+            const turns = f32(f32(f32(Math.atan2(dy, dx)) - view.rotation) / f32(Math.PI * 2));
+            frame = Math.floor(f32(f32(turns * view.directions) + .5));
+            frame = (frame % view.directions + view.directions) % view.directions;
+        }
+    }
+    atlasFrames[index] = frame;
+    source[index * 4 + 2] = view.widths[frame];
+}
+
+function collect(widths, widthCount, cx, cy, range, actors, actorCount, elapsedSeconds) {
     const f32 = Math.fround;
     const widthValues = new Float32Array(widths.buffer, widths.byteOffset, widths.length);
     for (let i = 0; i < widthCount; i++) source[widths[i * 2] * 4 + 2] = widthValues[i * 2 + 1];
@@ -37,6 +66,7 @@ function collect(widths, widthCount, cx, cy, range, actors, actorCount) {
             if (!bucket) continue;
             for (const index of bucket) {
                 candidateCount++;
+                resolveAtlas(index, cx, cy, elapsedSeconds);
                 const dx = f32(source[index * 4] - cx), dy = f32(source[index * 4 + 1] - cy);
                 const distance = f32(f32(dx * dx) + f32(dy * dy)), limit = f32(range + source[index * 4 + 2] * .5);
                 if (distance <= f32(limit * limit)) nearby.push(index);
@@ -62,8 +92,8 @@ function collect(widths, widthCount, cx, cy, range, actors, actorCount) {
 }
 
 function select(output, widths, widthCount, cx, cy, range, dirX, dirY, planeScale, cullView,
-    actors = new Float32Array(), actorCount = 0) {
-    collect(widths, widthCount, cx, cy, range, actors, actorCount);
+    actors = new Float32Array(), actorCount = 0, elapsedSeconds = 0) {
+    collect(widths, widthCount, cx, cy, range, actors, actorCount, elapsedSeconds);
     const f32 = Math.fround, marginScale = f32(Math.sqrt(f32(1 + f32(planeScale * planeScale))));
     let written = 0;
     for (let i = 0; i < nearby.length; i++) {
@@ -82,6 +112,76 @@ function select(output, widths, widthCount, cx, cy, range, dirX, dirY, planeScal
     }
     output[0] = written; output[1] = candidateCount;
     return written;
+}
+
+function prepareGpu(positions, records, atlases, count) {
+    prepare(positions, count);
+    gpuRecords = records;
+    atlasViews = new Array(count);
+    atlasFrames = new Uint32Array(count);
+    for (const view of atlases) atlasViews[view.index] = view;
+    gpuKeys = new Uint32Array((count + 4) * 2);
+    gpuPacked = new Uint32Array(128);
+    gpuFloats = new Float32Array(gpuPacked.buffer);
+    gpuActors = new Float32Array(16);
+    gpuCount = 0; uploadedCount = -1; uploadedMapInfo = null;
+}
+
+function selectGpu(cx, cy, range, dirX, dirY, planeScale, cullView, elapsedSeconds, actors, actorCount) {
+    const needed = sourceCount + actorCount;
+    if (gpuKeys.length < (needed + 1) * 2) gpuKeys = new Uint32Array((needed + 1) * 4);
+    if (gpuActors.length < actorCount * 4) gpuActors = new Float32Array(actorCount * 8);
+    let actorValues = views.get(actors);
+    if (!actorValues) {
+        actorValues = new Float32Array(actors.buffer, actors.byteOffset, actors.length);
+        views.set(actors, actorValues);
+    }
+    for (let i = 0; i < actorCount; i++) {
+        gpuActors[i * 4] = actorValues[i * 12]; gpuActors[i * 4 + 1] = actorValues[i * 12 + 1];
+        gpuActors[i * 4 + 2] = actorValues[i * 12 + 4]; gpuActors[i * 4 + 3] = actorValues[i * 12 + 8];
+    }
+    gpuCount = select(gpuKeys, noWidths, 0, cx, cy, range, dirX, dirY, planeScale, cullView,
+        gpuActors, actorCount, elapsedSeconds);
+    if (gpuPacked.length < gpuCount * 8) {
+        gpuPacked = new Uint32Array(Math.max(gpuCount * 16, gpuPacked.length * 2));
+        gpuFloats = new Float32Array(gpuPacked.buffer);
+    }
+    for (let i = 0; i < gpuCount; i++) {
+        const index = gpuKeys[2 + i * 2], dynamic = index >= sourceCount;
+        const records = dynamic ? actors : gpuRecords;
+        const offset = dynamic ? (index - sourceCount) * 12 : index * 8;
+        for (let word = 0; word < 8; word++) gpuPacked[i * 8 + word] = records[offset + word];
+        const atlas = dynamic ? null : atlasViews[index];
+        if (atlas) {
+            const frame = atlasFrames[index];
+            gpuPacked[i * 8 + 2] += frame;
+            gpuFloats[i * 8 + 4] = atlas.widths[frame];
+            gpuPacked[i * 8 + 7] = atlas.kinds[frame];
+        }
+    }
+    return gpuCount;
+}
+
+function selectFrame(cameraBytes, actorBytes, cx, cy, range, dirX, dirY, planeScale, cullView, elapsedSeconds, actorCount) {
+    // Blazor's object-argument path can supply ordinary number arrays as well
+    // as Uint8Array. Keep the WebGPU BufferSource stable in either case.
+    cameraUpload.set(cameraBytes);
+    cameraQueue.writeBuffer(cameraBuffer, 0, cameraUpload);
+    if (actorRecords.byteLength < actorBytes.byteLength) {
+        actorRecords = new Uint32Array(actorBytes.byteLength / 4);
+        actorByteView = new Uint8Array(actorRecords.buffer);
+    }
+    actorByteView.set(actorBytes);
+    return selectGpu(cx, cy, range, dirX, dirY, planeScale, cullView, elapsedSeconds, actorRecords, actorCount);
+}
+
+function uploadGpu(queue, buffer, mapInfo) {
+    if (uploadedMapInfo !== mapInfo || uploadedCount !== gpuCount) {
+        countUpload[0] = gpuCount;
+        queue.writeBuffer(mapInfo, 8, countUpload);
+        uploadedMapInfo = mapInfo; uploadedCount = gpuCount;
+    }
+    if (gpuCount) queue.writeBuffer(buffer, 0, gpuPacked, 0, gpuCount * 8);
 }
 
 function sort(keys, count) {
@@ -150,7 +250,9 @@ function sort(keys, count) {
     intro(0, count, 2 * (Math.floor(Math.log2(Math.max(1, count))) + 1));
 }
 
-return { prepare, release, select, sort };
+return { prepare, release, select, sort, prepareGpu, selectGpu, uploadGpu, selectFrame,
+    uploadFrame(buffer, mapInfo) { uploadGpu(cameraQueue, buffer, mapInfo); },
+    setCamera(queue, buffer) { cameraQueue = queue; cameraBuffer = buffer; }, getCandidateCount: () => candidateCount };
 }
 
 const defaultSelector = createSelector();

@@ -20,10 +20,7 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
     private Vector2 _viewport;
     private bool _disposed;
     public UiDocument? Document { get; private set; }
-    public Vector2 Viewport
-    {
-        get { var size = _surface!.Invoke<float[]>("size"); return new(size[0], size[1]); }
-    }
+    public Vector2 Viewport => _viewport;
 
     private BrowserUiHost() { }
     public static async Task<BrowserUiHost> CreateAsync(IJSRuntime runtime, ElementReference canvas,
@@ -36,6 +33,8 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
             host._callback = DotNetObjectReference.Create(host);
             var reference = await host._module.InvokeAsync<IJSObjectReference>("createUi", cancellationToken, canvas, host._callback);
             host._surface = reference as IJSInProcessObjectReference ?? throw new NotSupportedException("BrowserUiHost requires in-process WebAssembly interop.");
+            var size = host._surface.Invoke<float[]>("size");
+            host._viewport = new(size[0], size[1]);
             return host;
         }
         catch { host.Dispose(); throw; }
@@ -120,7 +119,15 @@ public sealed class BrowserUiHost : IUiRenderer, IUiTextMeasurer
     [JSInvokable]
     public bool Dispatch(UiBrowserEvent e)
     {
-        if (_disposed || Document == null) return false;
+        if (_disposed) return false;
+        if (e.Kind == "resize")
+        {
+            if (float.IsFinite(e.X) && float.IsFinite(e.Y) && e.X > 0 && e.Y > 0)
+                _viewport = new(e.X, e.Y);
+            if (Document != null) Render(_viewport.X, _viewport.Y);
+            return false;
+        }
+        if (Document == null) return false;
         var input = Document.Input;
         var point = new Vector2(e.X, e.Y);
         var handled = e.Kind switch

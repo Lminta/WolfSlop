@@ -9,6 +9,32 @@ namespace WolfNET.Engine.Browser.Graphics;
 /// <summary>Resolves the browser's ordered sprite IDs without repeating atlas-frame selection.</summary>
 internal sealed class SpriteSelection
 {
+    internal sealed record AtlasView(int Index, int Frames, int Directions, float Rotation,
+        float AnimationRate, double PhaseSeconds, float[] Widths, uint[] Kinds);
+
+    public static (VisibleSprite[] Records, AtlasView[] Atlases) PrepareGpuScene(IReadOnlyList<Sprite> sprites)
+    {
+        var records = new VisibleSprite[sprites.Count];
+        var atlases = new List<AtlasView>();
+        for (var i = 0; i < sprites.Count; i++)
+        {
+            var sprite = sprites[i];
+            records[i] = new(sprite.Position, sprite.TextureLayer, sprite.OwnerCell,
+                new(sprite.ViewWidth(0), sprite.Scale.Y), sprite.Elevation, sprite.ViewKind(0));
+            if (sprite.Atlas is not { } atlas) continue;
+            var widths = new float[atlas.Frames.Length];
+            var kinds = new uint[widths.Length];
+            for (var frame = 0; frame < widths.Length; frame++)
+            {
+                widths[frame] = sprite.ViewWidth(frame);
+                kinds[frame] = sprite.ViewKind(frame);
+            }
+            atlases.Add(new(i, widths.Length, atlas.Directions, sprite.RotationDegrees * MathF.PI / 180,
+                sprite.Animation?.FramesPerSecond ?? 0, sprite.Animation?.PhaseSeconds ?? 0, widths, kinds));
+        }
+        return (records, atlases.ToArray());
+    }
+
     // Matches the 32-byte storage record used by both sprite shaders.
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal readonly record struct VisibleSprite(Vector2 Position, uint Layer, uint OwnerCell,

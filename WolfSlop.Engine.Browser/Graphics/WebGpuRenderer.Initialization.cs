@@ -106,7 +106,8 @@ public sealed partial class WebGpuRenderer
                 cancellationToken.ThrowIfCancellationRequested();
                 ObjectDisposedException.ThrowIf(_disposed, this);
             }
-            _browserSprites = new BrowserSpriteSelection(spriteModule.JSRef!.Call<JSObject>("createSelector"));
+            using (var queue = _device.Queue)
+                _browserSprites = new BrowserSpriteSelection(spriteModule.JSRef!.Call<JSObject>("createSelector"), queue, _cameraBuffer!);
 
 
             // 4. Compile shaders.

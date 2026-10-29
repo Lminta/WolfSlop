@@ -141,10 +141,10 @@ public sealed class UiCanvas(string? id = null) : UiElement(id)
     private UiDrawing _drawing = new([]);
     private UiRect _viewBox = new(0, 0, 100, 100);
     private Matrix3x2 _drawingTransform = Matrix3x2.Identity;
-    public UiDrawing Drawing { get => _drawing; set => Set(ref _drawing, value ?? throw new ArgumentNullException(nameof(value))); }
+    public UiDrawing Drawing { get => _drawing; set => SetVisual(ref _drawing, value ?? throw new ArgumentNullException(nameof(value))); }
     public UiRect ViewBox { get => _viewBox; set => Set(ref _viewBox, value); }
     // View changes reuse the immutable drawing and its browser-side geometry.
-    public Matrix3x2 DrawingTransform { get => _drawingTransform; set => Set(ref _drawingTransform, value); }
+    public Matrix3x2 DrawingTransform { get => _drawingTransform; set => SetVisual(ref _drawingTransform, value); }
     internal override string Kind => "canvas";
 }
 

@@ -308,7 +308,11 @@ export function createUi(world, callback) {
         if (send({kind: 'key', key: event.key, shift: event.shiftKey, repeat: event.repeat})) {event.preventDefault(); event.stopImmediatePropagation();}
     }, true);
     listen(window, 'blur', () => {pointers.clear(); hover = null; send({kind: 'cancel'});});
-    const observer = new ResizeObserver(paint); observer.observe(world);
+    const observer = new ResizeObserver(() => {
+        const rect = world.getBoundingClientRect();
+        send({kind: 'resize', x: Math.max(1, rect.width), y: Math.max(1, rect.height)});
+        paint();
+    }); observer.observe(world);
     function reset() {
         generation++; frame = null; canvas.__uiFrame = null;
         for (const pointer of pointers) if (world.hasPointerCapture?.(pointer)) world.releasePointerCapture(pointer);

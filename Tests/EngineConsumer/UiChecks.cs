@@ -143,6 +143,26 @@ internal static class UiChecks
         var scaledFrame = scaled.BuildFrame(new(400, 300));
         Check(scaledFrame.Width == 800 && scaledFrame.Height == 600, "Reference scaling changed logical layout size.");
 
+        using var visual = new UiDocument { ScaleMode = UiScaleMode.Pixels };
+        var visualText = visual.Root.Add(new UiText("visual-text") { Text = "short" });
+        var wheel = visual.Root.Add(new UiImage("wheel") { Style = new() { Width = 100, Height = 100 } });
+        var visualMap = visual.Root.Add(new UiCanvas("visual-map"));
+        var originalVisual = visual.BuildFrame(new(800, 600));
+        var textWidth = visualText.Bounds.Width;
+        wheel.Rotation = .5f;
+        visualMap.DrawingTransform = Matrix3x2.CreateTranslation(10, 20);
+        var rotatedVisual = visual.BuildFrame(new(800, 600));
+        Check(rotatedVisual.Version > originalVisual.Version && wheel.Bounds.Width == 100 && visualText.Bounds.Width == textWidth,
+            "Visual transforms changed measured layout.");
+        Check(rotatedVisual.Nodes.Single(node => node.Id == "wheel").Transform != originalVisual.Nodes.Single(node => node.Id == "wheel").Transform,
+            "A visual-only rotation did not update the display list.");
+        visualText.Text = "a much longer label";
+        visual.BuildFrame(new(800, 600));
+        Check(visualText.Bounds.Width > textWidth, "Text changes did not invalidate a retained layout.");
+        Check(visual.BuildFrame(new(1024, 768)).Width == 1024 && visual.Root.Bounds.Width == 1024,
+            "Resizing did not invalidate a retained layout.");
+        Reject<ArgumentOutOfRangeException>(() => wheel.Rotation = float.NaN);
+
         Reject<InvalidOperationException>(() => document.Root.Add(new UiText(first.Id)));
         Reject<InvalidOperationException>(() => column.Children.Add(first));
         Reject<InvalidOperationException>(() => column.Children.Add(document.Root));

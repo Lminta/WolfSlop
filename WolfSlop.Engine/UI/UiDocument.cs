@@ -15,6 +15,8 @@ public sealed class UiDocument : IDisposable
     private UiElement? _modal;
     private UiElement? _focusBeforeModal;
     private bool _disposed;
+    private bool _layoutDirty = true;
+    private long _lastMetricsVersion = -1;
     public bool IsDisposed => _disposed;
     public UiPanel Root { get; }
     public UiInputRouter Input { get; }
@@ -50,6 +52,12 @@ public sealed class UiDocument : IDisposable
     public IEnumerable<string> ImageSources => Root.DescendantsAndSelf().OfType<UiImage>()
         .Select(image => image.Source).Where(source => !string.IsNullOrWhiteSpace(source)).Distinct(StringComparer.Ordinal);
     public void Invalidate()
+    {
+        if (_disposed) return;
+        _layoutDirty = true;
+        InvalidateVisual();
+    }
+    internal void InvalidateVisual()
     {
         if (_disposed) return;
         Version++; Changed?.Invoke();
@@ -94,13 +102,19 @@ public sealed class UiDocument : IDisposable
             for (var current = _modal; current != null; current = current.Parent)
                 if (!current.Visible || current.Style.Opacity <= 0) { ModalRoot = null; break; }
         if (Input.Focused is { } focus && !Available(focus)) Input.Focus(null);
-        if (_frame?.Version == Version && viewport == _lastViewport && ReferenceEquals(metrics, _lastMetrics)) return _frame;
+        var viewportOrMetricsChanged = viewport != _lastViewport || !ReferenceEquals(metrics, _lastMetrics) || metrics.Version != _lastMetricsVersion;
+        if (_frame?.Version == Version && !viewportOrMetricsChanged) return _frame;
         _lastViewport = viewport; _lastMetrics = metrics;
+        _lastMetricsVersion = metrics.Version;
         var scale = ScaleMode == UiScaleMode.Pixels ? 1 : MathF.Min(viewport.X / ReferenceSize.X, viewport.Y / ReferenceSize.Y);
         var logical = viewport / scale;
-        _desired.Clear();
-        Measure(Root, logical, metrics);
-        Arrange(Root, new(0, 0, logical.X, logical.Y));
+        if (_layoutDirty || viewportOrMetricsChanged)
+        {
+            _desired.Clear();
+            Measure(Root, logical, metrics);
+            Arrange(Root, new(0, 0, logical.X, logical.Y));
+            _layoutDirty = false;
+        }
         var nodes = new List<UiRenderNode>();
         Emit(Root, Matrix3x2.Identity, [new(new(0, 0, logical.X, logical.Y), UiMatrix.Identity)], 1, Theme.Foreground, true, metrics, nodes);
         return _frame = new(Version, logical.X, logical.Y, nodes.AsReadOnly(), Input.Focused?.Id, ModalRoot?.Id);

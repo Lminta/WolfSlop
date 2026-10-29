@@ -74,23 +74,18 @@ public sealed partial class WebGpuRenderer
         DestroyBuffer(_spriteBuffer);
         _spriteBuffer = null;
         _spriteCapacity = 0;
-        _spriteUpload?.Dispose();
-        _spriteUpload = null;
-        _spriteBytes = [];
-        _uploadedSpriteCount = -1;
+        _spriteCount = 0;
         DestroyBuffer(_materialsBuffer);
         _materialsBuffer = null;
         _textures?.Dispose();
         _textures = null;
         _uploadedMap = null;
-        _spriteSelection.Clear();
         _browserSprites?.ReleaseScene();
     }
 
-    private void UpdateSprites(GPUQueue queue)
+    private void UpdateSprites()
     {
-        var sprites = _spriteSelection.Visible;
-        var spriteCount = sprites.Length;
+        var spriteCount = _spriteCount;
 
         if (Math.Max(1, spriteCount) > _spriteCapacity)
         {
@@ -98,9 +93,6 @@ public sealed partial class WebGpuRenderer
             _minimapBindGroup?.Dispose();
             DestroyBuffer(_spriteBuffer);
             _spriteCapacity = Math.Max(16, (int)System.Numerics.BitOperations.RoundUpToPowerOf2((uint)spriteCount));
-            _spriteUpload?.Dispose();
-            _spriteUpload = new Uint32Array(_spriteCapacity * 8);
-            _spriteBytes = new byte[checked(_spriteCapacity * SpriteSize)];
             _spriteBuffer = _device!.CreateBuffer(new GPUBufferDescriptor
             {
                 Label = "WolfNET Sprites",
@@ -142,22 +134,7 @@ public sealed partial class WebGpuRenderer
             _frameSubmission!.JSRef!.CallVoid("setScene", _renderBindGroup!, _spriteBindGroup);
         }
 
-        // The third u32 of MapInfo counts active sprites, excluding spare buffer capacity.
-        if (_uploadedSpriteCount != spriteCount)
-        {
-            BitConverter.TryWriteBytes(_spriteCountBytes, (uint)spriteCount);
-            _spriteCountUpload!.WriteBytes(_spriteCountBytes);
-            queue.WriteBuffer(_mapInfoBuffer!, 8, _spriteCountUpload);
-            _uploadedSpriteCount = spriteCount;
-        }
-
-        if (spriteCount == 0)
-            return;
-
-        MemoryMarshal.AsBytes(sprites).CopyTo(_spriteBytes);
-        _spriteUpload!.Write(_spriteBytes, 0, 0, spriteCount * SpriteSize);
-        // writeBuffer offsets/sizes are in elements for a Uint32Array, not bytes.
-        queue.WriteBuffer(_spriteBuffer!, 0UL, _spriteUpload, 0, (ulong)spriteCount * 8);
+        _browserSprites!.Upload(_spriteBuffer!, _mapInfoBuffer!);
     }
 
 }

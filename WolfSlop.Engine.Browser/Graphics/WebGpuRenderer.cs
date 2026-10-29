@@ -37,15 +37,9 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
     private GPUBuffer? _spriteBuffer;
     private GPUBindGroup? _spriteBindGroup;
     private int _spriteCapacity;
-    private readonly SpriteSelection _spriteSelection = new();
+    private int _spriteCount;
     private BrowserSpriteSelection? _browserSprites;
-    private byte[] _spriteBytes = [];
-    private Uint32Array? _spriteUpload;
-    private Float32Array? _cameraUpload;
-    private Uint32Array? _spriteCountUpload;
     private readonly byte[] _cameraBytes = new byte[CameraBufferSize];
-    private readonly byte[] _spriteCountBytes = new byte[4];
-    private int _uploadedSpriteCount = -1;
     private bool _profiling;
     private long _profileSampleStart;
     private int _profileFrames;
@@ -96,18 +90,21 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         }
 
         // 1. Synchronize map only if revision changed.
-        using var queue = _device.Queue;
-        UpdateMap(map, queue);
+        if (!ReferenceEquals(_uploadedMap, map))
+        {
+            using var queue = _device.Queue;
+            UpdateMap(map, queue);
+        }
 
         // 2. A new scene or mode starts with a complete frame before rotating columns.
         var (columnStep, columnPhase) = PrepareColumnFrame();
-        UpdateCamera(position, direction, plane, pitch, elevation, columnStep, columnPhase, queue);
+        UpdateCamera(position, direction, plane, pitch, elevation, columnStep, columnPhase);
         UpdateOverlays(frame.Overlays);
         var selectionStart = _profiling ? Stopwatch.GetTimestamp() : 0;
-        _browserSprites!.Select(_spriteSelection, map.Sprites, position, direction, plane, _settings.RenderDistance,
-            frame.CullSpritesOutsideView, _sceneAnimationClock.Elapsed.TotalSeconds, frame.DynamicSprites);
+        _spriteCount = _browserSprites!.Select(map.Sprites, position, direction, plane, _settings.RenderDistance,
+            frame.CullSpritesOutsideView, _sceneAnimationClock.Elapsed.TotalSeconds, frame.DynamicSprites, _cameraBytes);
         var uploadStart = _profiling ? Stopwatch.GetTimestamp() : 0;
-        UpdateSprites(queue);
+        UpdateSprites();
         var submissionStart = _profiling ? Stopwatch.GetTimestamp() : 0;
 
         // Encode the GPU frame in one browser call. Per-command WASM interop
@@ -116,10 +113,10 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         uint workgroups = (columns + WorkgroupSize - 1) / WorkgroupSize;
         var submission = _frameSubmission!.JSRef!;
         if (frame.Overlays.Count == 0 && !frame.ShowMinimap)
-            submission.CallVoid("render", columnStep, workgroups, _spriteSelection.Visible.Length);
+            submission.CallVoid("render", columnStep, workgroups, _spriteCount);
         else
         {
-            using var pass = submission.Call<GPURenderPassEncoder>("begin", columnStep, workgroups, _spriteSelection.Visible.Length);
+            using var pass = submission.Call<GPURenderPassEncoder>("begin", columnStep, workgroups, _spriteCount);
             DrawScreenLayers(pass, frame);
             pass.End();
             submission.CallVoid("submit");
@@ -143,8 +140,8 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         _selectionMilliseconds += Stopwatch.GetElapsedTime(selectionStart, uploadStart).TotalMilliseconds;
         _uploadMilliseconds += Stopwatch.GetElapsedTime(uploadStart, submissionStart).TotalMilliseconds;
         _submissionMilliseconds += Stopwatch.GetElapsedTime(submissionStart).TotalMilliseconds;
-        _profileCandidates += _spriteSelection.CandidatesExamined;
-        _profileSprites += _spriteSelection.Visible.Length;
+        _profileCandidates += _browserSprites!.CandidatesExamined;
+        _profileSprites += _spriteCount;
         _profileFrames++;
         if (Stopwatch.GetElapsedTime(_profileSampleStart).TotalSeconds < 1) return;
         Console.WriteLine("[PROFILE] " + System.Text.Json.JsonSerializer.Serialize(new
@@ -204,8 +201,6 @@ public sealed partial class WebGpuRenderer : ISceneRenderer, IDisposable
         _context?.Dispose();
         _frameSubmission?.Dispose();
         _frameSubmission = null;
-        _cameraUpload?.Dispose();
-        _spriteCountUpload?.Dispose();
         _browserSprites?.Dispose();
         _browserSprites = null;
         _device?.Dispose();
