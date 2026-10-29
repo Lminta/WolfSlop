@@ -1,8 +1,8 @@
-using System.Net.Http.Json;
+using WolfSlop.Engine.Assets;
 using System.Numerics;
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Graphics;
 
-namespace WolfNET.Engine.World;
+namespace WolfSlop.Engine.World;
 
 public sealed class TileMap : IMap
 {
@@ -51,12 +51,12 @@ public sealed class TileMap : IMap
         RebuildAudioEmitters();
     }
 
-    public static async Task<TileMap> LoadAsync(HttpClient http, string path, int maxWidth, int maxHeight,
+    public static async Task<TileMap> LoadAsync(IAssetSource assets, string path, int maxWidth, int maxHeight,
         CancellationToken cancellationToken = default)
     {
-        var definition = await http.GetFromJsonAsync<MapDefinition>(path, cancellationToken)
+        var definition = await assets.ReadJsonAsync<MapDefinition>(path, cancellationToken)
             ?? throw new InvalidDataException($"Map '{path}' is empty.");
-        var objects = await MapObjectLoader.LoadAsync(http, path, definition, cancellationToken);
+        var objects = await MapObjectLoader.LoadAsync(assets, path, definition, cancellationToken);
         return new TileMap(definition, objects, maxWidth, maxHeight);
     }
 

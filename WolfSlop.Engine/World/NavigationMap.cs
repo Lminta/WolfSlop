@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.World;
+namespace WolfSlop.Engine.World;
 
 public interface INavigationMap
 {

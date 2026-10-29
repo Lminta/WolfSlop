@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.Physics;
+namespace WolfSlop.Engine.Physics;
 
 /// <summary>Sweeps a circle through a navigation grid and resolves sliding contacts.</summary>
 public sealed class CircleCollider(INavigationMap map, float radius)

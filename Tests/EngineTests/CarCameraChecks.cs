@@ -1,7 +1,7 @@
 using System.Numerics;
-using WolfNET.Engine.World;
-using WolfNET.Engine.Actors;
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.World;
+using WolfSlop.Engine.Actors;
+using WolfSlop.Engine.Graphics;
 
 internal static class CarCameraChecks
 {

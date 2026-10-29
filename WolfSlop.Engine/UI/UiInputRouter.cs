@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 public sealed class UiPointerEvent(UiElement target, Vector2 position, int pointerId = 0)
 {

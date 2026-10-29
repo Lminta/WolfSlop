@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.Audio;
+namespace WolfSlop.Engine.Audio;
 
 /// <summary>Decoded clips keyed by an application's own cue type.</summary>
 public interface ISfxBackend<TCue> : IDisposable where TCue : notnull

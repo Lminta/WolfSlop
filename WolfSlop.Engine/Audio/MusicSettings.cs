@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.Audio;
+namespace WolfSlop.Engine.Audio;
 
 public record MusicSettings
 {

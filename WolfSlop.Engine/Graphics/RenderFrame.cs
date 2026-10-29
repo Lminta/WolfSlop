@@ -1,7 +1,7 @@
 using System.Numerics;
-using WolfNET.Engine.World;
+using WolfSlop.Engine.World;
 
-namespace WolfNET.Engine.Graphics;
+namespace WolfSlop.Engine.Graphics;
 
 /// <summary>A camera snapshot and any number of application-owned moving sprites and screen layers.</summary>
 public readonly record struct RenderFrame(

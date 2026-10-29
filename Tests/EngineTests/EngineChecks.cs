@@ -1,8 +1,8 @@
 using System.Numerics;
-using WolfNET.Engine.World;
-using WolfNET.Engine.Core;
-using WolfNET.Engine.Input;
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.World;
+using WolfSlop.Engine.Core;
+using WolfSlop.Engine.Input;
+using WolfSlop.Engine.Graphics;
 
 internal static class EngineChecks
 {
@@ -65,7 +65,7 @@ internal static class EngineChecks
         timing.Reset();
         for (var tick = 0; tick < 240; tick++)
             Check(timing.TryAdvance(tick * (1000d / 120), out _) == (tick % 2 == 0),
-                "Browser timestamps did not maintain an even 60 FPS cadence on a 120 Hz display.");
+                "Frame timestamps did not maintain an even 60 FPS cadence on a 120 Hz display.");
         Throws<ArgumentOutOfRangeException>(() => new FrameTiming(0));
         Throws<ArgumentException>(() => new RendererSettings(targetFPS: 0).Validate());
         Throws<ArgumentException>(() => new RendererSettings { FovDegrees = float.NaN }.Validate());

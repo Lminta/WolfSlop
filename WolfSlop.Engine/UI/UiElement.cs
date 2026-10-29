@@ -1,14 +1,14 @@
 using System.Collections;
 using System.Numerics;
 
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 /// <summary>A retained UI node. A node has one parent; a document owns its attached tree.</summary>
 public class UiElement
 {
     private UiStyle _style = new();
     private bool _visible = true, _enabled = true, _focusable, _blocksInput;
-    private string? _label, _role, _className;
+    private string? _label, _role;
     private int _tabIndex;
     public string Id { get; }
     public UiElement? Parent { get; internal set; }
@@ -23,7 +23,6 @@ public class UiElement
     public int TabIndex { get => _tabIndex; set => Set(ref _tabIndex, value); }
     public string? Label { get => _label; set => Set(ref _label, value); }
     public string? Role { get => _role; set => Set(ref _role, value); }
-    public string? ClassName { get => _className; set => Set(ref _className, value); }
     public UiStyle Style { get => _style; set => Set(ref _style, value ?? throw new ArgumentNullException(nameof(value))); }
     /// <summary>Updates the visual rotation without repeating measurement and arrangement.</summary>
     public float Rotation

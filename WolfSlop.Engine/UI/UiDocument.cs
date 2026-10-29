@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 /// <summary>Owns layout, draw order, focus and input for a retained UI tree. Contains no browser APIs.</summary>
 public sealed class UiDocument : IDisposable
@@ -226,10 +226,10 @@ public sealed class UiDocument : IDisposable
             Source = (node as UiImage)?.Source, SourceRect = (node as UiImage)?.SourceRect ?? new(0, 0, 1, 1), ImageFit = (node as UiImage)?.Fit ?? UiImageFit.Stretch,
             Drawing = (node as UiCanvas)?.Drawing, ViewBox = (node as UiCanvas)?.ViewBox ?? default,
             DrawingTransform = node is UiCanvas canvas ? UiMatrix.From(canvas.DrawingTransform) : UiMatrix.Identity,
-            ClassName = node.ClassName, Role = node.Role ?? (node.Label != null && node is UiImage or UiCanvas ? "img" : null),
+            Role = node.Role ?? (node.Label != null && node is UiImage or UiCanvas ? "img" : null),
             Label = node.Label, Focusable = node.Focusable, TabIndex = node.TabIndex,
             Interactive = node.Interactive && enabled && opacity > 0,
-            Accessible = node.ClassName != null || node.Role != null || node.Label != null || node is UiText,
+            Accessible = node.Role != null || node.Label != null || node is UiText,
             Checked = (node as UiToggle)?.Checked, Value = (node as UiProgressBar)?.Value, Accent = Theme.Accent,
             InputValue = (node as UiTextInput)?.Text, Placeholder = (node as UiTextInput)?.Placeholder,
             MaxLength = (node as UiTextInput)?.MaxLength ?? 0, ReadOnly = (node as UiTextInput)?.ReadOnly ?? false,

@@ -1,8 +1,8 @@
-using WolfNET.Engine.Actors.Components;
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Actors.Components;
+using WolfSlop.Engine.Graphics;
 using System.Numerics;
 
-namespace WolfNET.Engine.Actors;
+namespace WolfSlop.Engine.Actors;
 
 public interface IControlledActor
 {

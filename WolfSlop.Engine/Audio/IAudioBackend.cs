@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.Audio;
+namespace WolfSlop.Engine.Audio;
 
 /// <summary>Playback primitives supplied by the host, independent of the music queue.</summary>
 public interface IAudioBackend : IDisposable

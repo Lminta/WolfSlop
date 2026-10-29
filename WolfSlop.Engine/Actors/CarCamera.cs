@@ -1,8 +1,8 @@
 using System.Numerics;
-using WolfNET.Engine.Physics;
-using WolfNET.Engine.Graphics;
+using WolfSlop.Engine.Physics;
+using WolfSlop.Engine.Graphics;
 
-namespace WolfNET.Engine.Actors;
+namespace WolfSlop.Engine.Actors;
 
 /// <summary>Free look around the car's heading, with a collision-aware chase camera.</summary>
 public sealed class CarCamera

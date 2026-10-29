@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WolfNET.Engine.World;
+namespace WolfSlop.Engine.World;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(PassageDefinition), "passage")]

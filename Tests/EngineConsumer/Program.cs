@@ -1,12 +1,12 @@
 using System.Numerics;
 using System.Text.Json;
-using WolfNET.Engine.Actors;
-using WolfNET.Engine.Audio;
-using WolfNET.Engine.Core;
-using WolfNET.Engine.Graphics;
-using WolfNET.Engine.Input;
-using WolfNET.Engine.Navigation;
-using WolfNET.Engine.World;
+using WolfSlop.Engine.Actors;
+using WolfSlop.Engine.Audio;
+using WolfSlop.Engine.Core;
+using WolfSlop.Engine.Graphics;
+using WolfSlop.Engine.Input;
+using WolfSlop.Engine.Navigation;
+using WolfSlop.Engine.World;
 
 // This assembly references only Engine and receives no access to its internals.
 int checks = 0;
@@ -18,7 +18,7 @@ Check(!engineAssembly.GetReferencedAssemblies().Any(assembly =>
         assembly.Name!.StartsWith("SpawnDev", StringComparison.Ordinal) ||
         assembly.Name.StartsWith("Microsoft.AspNetCore", StringComparison.Ordinal) ||
         assembly.Name.StartsWith("Microsoft.JSInterop", StringComparison.Ordinal) ||
-        assembly.Name.StartsWith("WolfNET.Engine.Browser", StringComparison.Ordinal)),
+        assembly.Name.StartsWith("WolfSlop.Engine.Sdl", StringComparison.Ordinal)),
     "The portable engine depends on a platform provider or browser framework.");
 Check(!engineAssembly.GetCustomAttributesData().Any(attribute =>
         attribute.AttributeType.FullName == "System.Runtime.Versioning.SupportedOSPlatformAttribute"),

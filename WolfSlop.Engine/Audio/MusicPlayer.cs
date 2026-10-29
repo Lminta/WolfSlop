@@ -1,6 +1,6 @@
-using WolfNET.Engine.World;
+using WolfSlop.Engine.World;
 
-namespace WolfNET.Engine.Audio;
+namespace WolfSlop.Engine.Audio;
 
 /// <summary>Repeating music queue and crossfades. Owns its backend and two streams;
 /// the host calls Update from its game loop. Contains no browser dependencies.</summary>

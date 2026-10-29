@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 public sealed record UiShape(string Kind, IReadOnlyList<float> Points, string? Fill = null, string? Stroke = null,
     float LineWidth = 1, UiMatrix? Transform = null);

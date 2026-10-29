@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.Actors;
+namespace WolfSlop.Engine.Actors;
 
 public sealed record CameraShakeSettings
 {

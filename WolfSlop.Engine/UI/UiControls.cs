@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 public class UiText(string? id = null) : UiElement(id)
 {
@@ -43,7 +43,7 @@ public class UiText(string? id = null) : UiElement(id)
     }
 }
 
-/// <summary>A single-line editor. The browser backend uses native editing, selection and IME.</summary>
+/// <summary>A single-line editor. Providers supply native editing, selection and IME.</summary>
 public sealed class UiTextInput : UiText
 {
     private string _placeholder = "";
@@ -143,7 +143,7 @@ public sealed class UiCanvas(string? id = null) : UiElement(id)
     private Matrix3x2 _drawingTransform = Matrix3x2.Identity;
     public UiDrawing Drawing { get => _drawing; set => SetVisual(ref _drawing, value ?? throw new ArgumentNullException(nameof(value))); }
     public UiRect ViewBox { get => _viewBox; set => Set(ref _viewBox, value); }
-    // View changes reuse the immutable drawing and its browser-side geometry.
+    // View changes reuse the immutable drawing and its provider geometry.
     public Matrix3x2 DrawingTransform { get => _drawingTransform; set => SetVisual(ref _drawingTransform, value); }
     internal override string Kind => "canvas";
 }

@@ -1,7 +1,7 @@
 // Only device input is substituted. Objects, components, camera, and simulation use production code.
 using System.Numerics;
-using WolfNET.Engine.Core;
-using WolfNET.Engine.Input;
+using WolfSlop.Engine.Core;
+using WolfSlop.Engine.Input;
 
 sealed class TestObject : ObjectBase { }
 

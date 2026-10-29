@@ -1,6 +1,6 @@
 <Solution>
-  <Project Path="WolfSlop.Engine/WolfNET.Engine.csproj" />
-  <Project Path="WolfSlop.Engine.Browser/WolfNET.Engine.Browser.csproj" />
-  <Project Path="Tests/EngineTests/WolfNET.EngineTests.csproj" />
-  <Project Path="Tests/EngineConsumer/WolfNET.EngineConsumer.csproj" />
+  <Project Path="WolfSlop.Engine/WolfSlop.Engine.csproj" />
+  <Project Path="WolfSlop.Engine.Sdl/WolfSlop.Engine.Sdl.csproj" />
+  <Project Path="Tests/EngineTests/WolfSlop.EngineTests.csproj" />
+  <Project Path="Tests/EngineConsumer/WolfSlop.EngineConsumer.csproj" />
 </Solution>

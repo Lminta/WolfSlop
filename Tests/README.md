@@ -1,21 +1,10 @@
-# Engine regression checks
+# Engine checks
 
-Run the commands in the [repository README](../README.md) from the engine
-repository root. `EngineTests` covers map compilation and edits, walking,
-input, timing, object/component ownership, doors, car physics/contact/cameras,
-decorative animation, and portable music queue/fade/pause/disposal behavior.
-It also generates sprite-sort reference data from seeded, procedural scenes.
+```sh
+dotnet run --project Tests/EngineTests/WolfSlop.EngineTests.csproj
+dotnet run --project Tests/EngineConsumer/WolfSlop.EngineConsumer.csproj
+```
 
-`EngineConsumer` references the portable engine alone and checks its public
-API, custom metadata/input/audio, rendering contracts, scene lifetime, retained
-UI, and absence of browser dependencies. Node checks cover sprite selection and
-ordering, texture uploads and cancellation, audio mixing, UI drawing/input, and
-frame submission, compact world targets, history copies, and screen-layer ordering.
-The sprite upload check compares packed GPU records against independent native
-rendering for animation phases, directional/footprint views, geometry flags,
-range/frustum culling, moving actors, and painter-order ties.
+The portable suite covers maps, doors, walking/driving, collisions, cameras, input/timing, animation, audio policy, and ownership. The independent consumer checks custom scenes, public APIs, UI layout/transforms/clipping/input/focus/modal behavior, and the platform-independent assembly boundary.
 
-Game-specific maps, scene assembly, character presentation, racing, opponents,
-sound configuration, and full-browser application checks live in the consuming
-game repository. It can link `Shared/ReferenceSpriteSelection.cs` to compare
-its own authored scenes with the same independent native ordering oracle.
+Native GPU/device integration belongs to the consuming application's smoke tests. The shader compiler under `Tools/ShaderCompiler` rebuilds precompiled SPIR-V and DXIL from HLSL.

@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.World;
+namespace WolfSlop.Engine.World;
 
 public sealed record MapDefinition
 {
@@ -17,7 +17,7 @@ public sealed record MapDefinition
 
 public sealed record MusicDefinition
 {
-    // Asset paths relative to wwwroot, in repeating playback order.
+    // Asset paths relative to the content root, in repeating playback order.
     public string[] Tracks { get; init; } = [];
     // Optional per-map overrides; otherwise audio-settings.json supplies defaults.
     public float? CrossfadeSeconds { get; init; }

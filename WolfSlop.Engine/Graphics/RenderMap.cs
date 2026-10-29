@@ -1,6 +1,6 @@
-using WolfNET.Engine.World;
+using WolfSlop.Engine.World;
 
-namespace WolfNET.Engine.Graphics;
+namespace WolfSlop.Engine.Graphics;
 
 [Flags]
 public enum RenderCellFlags : uint
@@ -13,7 +13,7 @@ public enum RenderCellFlags : uint
     DoorNormalX = 16
 }
 
-// All GPU records contain four 32-bit values, matching the WGSL structures.
+// All GPU records contain four 32-bit values, matching the native shader structures.
 public readonly record struct RenderCell(
     uint MaterialIndex, uint FloorTextureLayer, uint CeilingTextureLayer, RenderCellFlags Flags);
 

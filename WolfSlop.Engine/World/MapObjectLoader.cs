@@ -1,21 +1,13 @@
 using System.Collections.ObjectModel;
-using System.Net.Http.Json;
-using System.Text.Json;
+using WolfSlop.Engine.Assets;
 
-namespace WolfNET.Engine.World;
+namespace WolfSlop.Engine.World;
 
 public static class MapObjectLoader
 {
-    private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
-    {
-        AllowOutOfOrderMetadataProperties = true
-    };
-
     public static async Task<IReadOnlyDictionary<int, MapObjectDefinition>> LoadAsync(
-        HttpClient http, string mapPath, MapDefinition map, CancellationToken cancellationToken = default)
+        IAssetSource assets, string mapPath, MapDefinition map, CancellationToken cancellationToken = default)
     {
-        var mapUri = new Uri(http.BaseAddress
-            ?? throw new InvalidOperationException("Map loading requires an HTTP base address."), mapPath);
         if (map.WorldMap == null || map.WorldMap.Any(column => column == null) || map.Objects == null)
             throw new InvalidDataException("Map grid and object index are required.");
         var objects = new Dictionary<int, MapObjectDefinition>();
@@ -26,7 +18,7 @@ public static class MapObjectLoader
             {
                 if (id < 0 || !map.Objects.TryGetValue(id, out var file) || string.IsNullOrWhiteSpace(file))
                     throw new InvalidDataException($"No object path for ID {id} in '{mapPath}'.");
-                var definition = await http.GetFromJsonAsync<MapObjectDefinition>(new Uri(mapUri, file), Options, cancellationToken)
+                var definition = await assets.ReadJsonAsync<MapObjectDefinition>(AssetSourceExtensions.RelativeTo(mapPath, file), cancellationToken)
                     ?? throw new InvalidDataException($"Object file '{file}' is empty.");
                 if (definition.Id != id)
                     throw new InvalidDataException($"Object '{file}' has ID {definition.Id}, expected {id}.");

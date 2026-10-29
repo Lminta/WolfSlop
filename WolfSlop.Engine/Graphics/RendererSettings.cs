@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.Graphics;
+namespace WolfSlop.Engine.Graphics;
 
 public class RendererSettings(int width = 1920, int height = 1080, int targetFPS = 60)
 {

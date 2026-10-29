@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.Navigation;
+namespace WolfSlop.Engine.Navigation;
 
 /// <summary>Indexed distance and nearest-point queries along an open or looping polyline.</summary>
 public sealed class PolylinePath
@@ -42,7 +42,7 @@ public sealed class PolylinePath
     }
 
     // Immutable segment bounds let off-path queries find the exact nearest
-    // segment without repeatedly scanning the whole path in WebAssembly.
+    // segment without repeatedly scanning the whole path in the simulation.
     private int Build(int start, int count)
     {
         var min = new Vector2(float.PositiveInfinity);

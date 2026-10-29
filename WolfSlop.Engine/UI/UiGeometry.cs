@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 public readonly record struct UiRect(float X, float Y, float Width, float Height)
 {
@@ -80,7 +80,7 @@ public sealed record UiStyle
     public static UiStyle Fill { get; } = new() { Width = UiLength.Percent(1), Height = UiLength.Percent(1) };
 }
 
-public sealed record UiFont(string Family = "system-ui, sans-serif", float Size = 22, int Weight = 400, bool Italic = false);
+public sealed record UiFont(string Family = "sans-serif", float Size = 22, int Weight = 400, bool Italic = false);
 public sealed record UiTheme
 {
     public UiFont Font { get; init; } = new();
@@ -93,7 +93,7 @@ public sealed record UiTheme
     public string Disabled { get; init; } = "#66717a";
 }
 
-/// <summary>Serialization-friendly affine transform; compatible with Canvas 2D.</summary>
+/// <summary>Portable two-dimensional affine transform.</summary>
 public readonly record struct UiMatrix(float A, float B, float C, float D, float E, float F)
 {
     public static UiMatrix Identity => From(Matrix3x2.Identity);

@@ -1,6 +1,6 @@
-using WolfNET.Engine.Actors;
+using WolfSlop.Engine.Actors;
 
-namespace WolfNET.Engine.Graphics;
+namespace WolfSlop.Engine.Graphics;
 
 public interface ISceneRenderer
 {

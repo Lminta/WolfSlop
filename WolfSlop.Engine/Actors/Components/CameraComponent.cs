@@ -1,7 +1,7 @@
 using System.Numerics;
-using WolfNET.Engine.Core;
+using WolfSlop.Engine.Core;
 
-namespace WolfNET.Engine.Actors.Components;
+namespace WolfSlop.Engine.Actors.Components;
 
 public class CameraComponent : ComponentBase, ICamera
 {

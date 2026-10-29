@@ -1,6 +1,6 @@
 using System.Numerics;
 using System.Text.Json;
-using WolfNET.Engine.World;
+using WolfSlop.Engine.World;
 
 internal static class SpriteAnimationChecks
 {
@@ -117,7 +117,7 @@ internal static class SpriteAnimationChecks
         return assertions;
     }
 
-    private static WolfNET.Engine.Graphics.RenderMap Compile(SpriteDefinition sprite, bool group = false)
+    private static WolfSlop.Engine.Graphics.RenderMap Compile(SpriteDefinition sprite, bool group = false)
     {
         var objects = new Dictionary<int, MapObjectDefinition>
         {

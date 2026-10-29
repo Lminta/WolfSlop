@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.Core;
+namespace WolfSlop.Engine.Core;
 
 public abstract class ComponentBase(ObjectBase parent)
 {

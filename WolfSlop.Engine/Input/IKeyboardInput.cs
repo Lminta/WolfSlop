@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.Input;
+namespace WolfSlop.Engine.Input;
 
 public interface ISteeringInput
 {

@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WolfNET.Engine.Audio;
+namespace WolfSlop.Engine.Audio;
 
 public readonly record struct SoundEmitter<TCue>(int Id, TCue Cue, Vector2 Position,
     float Volume = 1, float Pitch = 1, float Phase = 0) where TCue : notnull;

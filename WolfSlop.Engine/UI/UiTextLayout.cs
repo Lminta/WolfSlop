@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Numerics;
 
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 public interface IUiTextMeasurer
 {
@@ -9,7 +9,7 @@ public interface IUiTextMeasurer
     float MeasureWidth(string text, UiFont font);
 }
 
-/// <summary>Deterministic fallback for headless layout. Browser hosts use actual font metrics.</summary>
+/// <summary>Deterministic fallback for headless layout. Native hosts use actual font metrics.</summary>
 public sealed class UiApproximateTextMeasurer : IUiTextMeasurer
 {
     public static UiApproximateTextMeasurer Instance { get; } = new();

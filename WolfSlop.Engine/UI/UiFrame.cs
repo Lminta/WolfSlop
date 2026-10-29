@@ -1,4 +1,4 @@
-namespace WolfNET.Engine.UI;
+namespace WolfSlop.Engine.UI;
 
 public interface IUiRenderer : IDisposable
 {
@@ -36,7 +36,6 @@ public sealed record UiRenderNode
     public UiDrawing? Drawing { get; init; }
     public UiMatrix DrawingTransform { get; init; } = UiMatrix.Identity;
     public UiRect ViewBox { get; init; }
-    public string? ClassName { get; init; }
     public string? Role { get; init; }
     public string? Label { get; init; }
     public int TabIndex { get; init; }
